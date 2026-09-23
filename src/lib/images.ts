@@ -1,0 +1,44 @@
+// Intrinsic pixel sizes of the local media files (used by next/image to reserve layout space).
+const SIZES: Record<string, [number, number]> = {
+  "/media/12d367_4f26ccd17f8f4e3a8958306ea08c2332_-98l26c.png": [1920, 1080],
+  "/media/photo-1438761681033-6461ffad8d80-1w3ghus.jpg": [300, 350],
+  "/media/photo-1438761681033-6461ffad8d80-4x65xm.jpg": [1200, 800],
+  "/media/photo-1438761681033-6461ffad8d80-b47b1d.jpg": [600, 600],
+  "/media/photo-1472099645785-5658abf4ff4e-1ugyw6q.jpg": [300, 350],
+  "/media/photo-1472099645785-5658abf4ff4e-kggofr.jpg": [600, 600],
+  "/media/photo-1472099645785-5658abf4ff4e-sbibq4.jpg": [1200, 800],
+  "/media/photo-1485872299829-c673f5194813-5d8mwv.jpg": [1200, 1245],
+  "/media/photo-1494790108377-be9c29b29330-12k39i4.jpg": [1200, 1800],
+  "/media/photo-1494790108377-be9c29b29330-17xle2a.jpg": [300, 350],
+  "/media/photo-1507003211169-0a1dd7228f2d-1tzs7on.jpg": [600, 600],
+  "/media/photo-1515169067868-5387ec356754-1f07mjj.jpg": [1200, 800],
+  "/media/photo-1517457373958-b7bdd4587205-c2n9pu.jpg": [1600, 1068],
+  "/media/photo-1517457373958-b7bdd4587205-wtqz5i.jpg": [1200, 801],
+  "/media/photo-1521737711867-e3b97375f902-1bhlj8x.jpg": [800, 1000],
+  "/media/photo-1521737711867-e3b97375f902-j2qzer.jpg": [1200, 1799],
+  "/media/photo-1523240795612-9a054b0db644-buocu1.jpg": [1200, 800],
+  "/media/photo-1523240795612-9a054b0db644-wls29p.jpg": [1600, 1067],
+  "/media/photo-1530103862676-de8c9debad1d-cuzqtd.jpg": [1200, 800],
+  "/media/photo-1542744173-8e7e53415bb0-12ijs3q.jpg": [1200, 800],
+  "/media/photo-1542744173-8e7e53415bb0-hrg2o2.jpg": [1600, 1067],
+  "/media/photo-1544005313-94ddf0286df2-1gwa1py.jpg": [300, 350],
+  "/media/photo-1544005313-94ddf0286df2-8mz4bc.jpg": [1200, 1798],
+  "/media/photo-1573496359142-b8d87734a5a2-q9ec4x.jpg": [600, 600],
+  "/media/photo-1580489944761-15a19d654956-djhzk.jpg": [600, 600],
+  "/media/photo-1581954548122-4dff8989c0f7-1ypmerk.jpg": [1200, 1500],
+  "/media/photo-1581954548122-4dff8989c0f7-kfm284.jpg": [1600, 2000],
+  "/media/photo-1645730826845-cd2ddec9984f-n0zmgx.jpg": [1200, 825],
+  "/media/photo-1651313949559-d1cd72300a19-zfdpzx.jpg": [1200, 900],
+  "/media/photo-1670899460364-ebc917bac09a-1jczgx3.jpg": [1200, 1600],
+  "/media/photo-1670899460364-ebc917bac09a-ylvrhf.jpg": [1600, 2133],
+  "/media/photo-1699730164892-d7c433524ff3-8fi1qw.jpg": [1200, 1600],
+  "/media/photo-1699730185428-d11054059c7f-6ixnz5.jpg": [1600, 2154],
+  "/media/photo-1699730185428-d11054059c7f-ra1det.jpg": [1200, 1615],
+  "/media/photo-1713450605268-5f8ba67f5b55-1zvdm5.jpg": [1200, 1200],
+  "/media/photo-1758691737487-29b4fae83e95-h5khqn.jpg": [1200, 675],
+};
+
+/** Returns [width, height] for a local image; remote/unknown images fall back to 16:9 (the placeholder ratio). */
+export function imageSize(src: string): [number, number] {
+  return SIZES[src] ?? [1920, 1080];
+}

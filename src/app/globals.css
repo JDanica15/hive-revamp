@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme tokens and base styles copied verbatim from the original site. */
+@layer base {
+  :root {
+    --background: 40 30% 96%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 222 47% 11%;
+    --primary-foreground: 40 30% 96%;
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 40 20% 90%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 33 62% 44%;
+    --accent-foreground: 40 30% 96%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 40 30% 96%;
+    --border: 40 15% 85%;
+    --input: 40 15% 85%;
+    --ring: 33 62% 44%;
+    --radius: 0.25rem;
+    --font-heading: "Fraunces", Georgia, serif;
+    --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Fraunces", Georgia, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .dark {
+    --background: 222 47% 7%;
+    --foreground: 40 30% 96%;
+    --card: 222 47% 11%;
+    --card-foreground: 40 30% 96%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 40 30% 96%;
+    --primary: 40 30% 96%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 222 30% 18%;
+    --secondary-foreground: 40 30% 96%;
+    --muted: 222 30% 18%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 33 62% 50%;
+    --accent-foreground: 40 30% 96%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 40 30% 96%;
+    --border: 222 30% 22%;
+    --input: 222 30% 22%;
+    --ring: 33 62% 50%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+    outline-color: hsl(var(--ring) / 0.5);
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    font-family: var(--font-body);
+    color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Visually hidden, but readable by screen readers and search engines. */
+@layer utilities {
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
