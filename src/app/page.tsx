@@ -8,6 +8,7 @@ import { Services } from "@/components/home/Services";
 import { Testimonials } from "@/components/home/Testimonials";
 import { TrustedBy } from "@/components/home/TrustedBy";
 import { JsonLd } from "@/components/JsonLd";
+import { VideoStories } from "@/components/VideoStories";
 import { getTestimonials } from "@/lib/data";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/jsonld";
 import { SITE_TITLE } from "@/lib/site";
@@ -28,6 +29,7 @@ export default function HomePage() {
         <HiveTeam />
         <Services />
         <Testimonials testimonials={getTestimonials()} />
+        <VideoStories />
         <Contact />
       </main>
       <Footer />

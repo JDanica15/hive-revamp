@@ -6,3 +6,7 @@ next-env.d.ts
 .env*.local
 .vercel
 npm-debug.log*
+
+# Raw team photos / testimonial videos and consent letters (web versions live in public/media)
+/src/assets/Team Photos-*/
+/src/assets/Testimonial Videos-*/

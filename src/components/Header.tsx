@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppLink } from "@/components/AppLink";
 import { ArrowUpRight, Plus, X } from "@/components/icons";
@@ -10,6 +11,8 @@ import { CONTACT, NAV_LINKS } from "@/lib/site";
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Only the home page opens on a dark hero; everywhere else the header needs dark text from the start.
+  const onDarkHero = usePathname() === "/" && !scrolled;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80);
@@ -20,7 +23,7 @@ export function Header() {
 
   const linkClass =
     "text-sm font-medium tracking-wide transition-colors " +
-    (scrolled ? "text-foreground/70 hover:text-foreground" : "text-background/80 hover:text-background");
+    (onDarkHero ? "text-background/80 hover:text-background" : "text-foreground/70 hover:text-foreground");
 
   return (
     <>
@@ -32,9 +35,9 @@ export function Header() {
       >
         <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-24 flex items-center justify-between h-20">
           <AppLink href="/" className="flex items-center gap-2.5" aria-label="Hive BPO home">
-            <Logo className="h-8 w-auto" variant={scrolled ? "dark" : "light"} />
+            <Logo className="h-8 w-auto" variant={onDarkHero ? "light" : "dark"} />
           </AppLink>
-          <nav className="hidden lg:flex items-center gap-8" aria-label="Main">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8" aria-label="Main">
             {NAV_LINKS.map((link) => (
               <AppLink key={link.label} href={link.href} className={linkClass}>
                 {link.label}

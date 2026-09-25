@@ -18,18 +18,29 @@ Deploys as-is to Vercel or any Node host. The contact and job-application forms 
 
 | Route | Source |
 | --- | --- |
-| `/` | Hero video, clients, team, services, testimonials, contact form |
-| `/careers` | Job board with department filter and slide-over application panel |
-| `/careers/[id]` | One page per job, with `JobPosting` structured data for Google Jobs (new) |
+| `/` | Hero video, clients, team, services, testimonials, video stories, contact form |
+| `/careers` | Careers hub: hero with live stats, benefits, searchable/filterable job board, slide-over application, video stories, employee story, hiring process, general application |
+| `/careers/[id]` | One page per job with a sticky application card, related roles and `JobPosting` structured data |
 | `/events` | Events grid with category filter |
+| `/gallery` | Team photo albums (masonry grid, album filter, lightbox) |
 | `/events/[id]` | Event detail with masonry gallery and lightbox |
 | `/api/inquiries`, `/api/applications` | Forward form submissions to the Base44 `Inquiry` / `JobApplication` entities |
 
 Old static-export URLs (`/index.html`, `/events/index.html`, …) permanently redirect to the clean URLs.
 
+## Job applications and resumes
+
+Applicants attach a resume (PDF, DOC or DOCX, up to 4 MB) by drag-and-drop or file picker. `/api/applications` checks the file type from its contents (not just the extension), uploads it to Base44 file storage (`Core.UploadFile`), then creates the `JobApplication` record with the file link in `resume_url`, so it shows up where applications are already reviewed in the Base44 admin. A LinkedIn/portfolio link, if given, is appended to the cover note. A hidden honeypot field silently drops bot submissions.
+
+Settings live in `src/lib/careers.ts`: `RESUME_REQUIRED` (currently `true`), the size limit (kept under Vercel's 4.5 MB request cap), accepted types, the benefits and hiring-step copy. "Don't see your role?" submissions are saved with `job_listing_id: "general"` and the title "General Application".
+
 ## Content
 
 Content lives in `src/data/*.json` (a snapshot of the Base44 entities). Images live in `public/media/`. Edit these files and redeploy to update the site. Intrinsic image sizes are listed in `src/lib/images.ts`; add an entry for any new gallery photo.
+
+The Video Stories section (home and careers) is set up in `src/lib/stories.ts`: videos and posters in `public/media/stories/`, and the "Moments" photos are picked from the gallery. Videos are H.264 MP4s, 720p, with fast start, made from the raw files in `src/assets/`, which are git-ignored (`ffmpeg -i in.mov -vf scale=720:-2,fps=30,format=yuv420p -c:v libx264 -crf 26 -c:a aac -b:a 128k -movflags +faststart out.mp4`). Add a `role` to a story to show it under the name.
+
+Gallery albums are listed in `src/lib/gallery.ts`, with photos in `public/media/gallery/<album>/01.jpg, 02.jpg…` (resized to 1600px on the long side). To add an album, drop the resized photos in a new folder, add an entry to `ALBUMS`, and add each photo's size to `src/lib/images.ts`.
 
 ## SEO
 

@@ -2,16 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ApplicationReceived, JobDetails } from "@/components/careers/JobApplication";
-import type { JobListing } from "@/lib/data";
+import { ApplicationForm, ApplicationReceived } from "@/components/careers/JobApplication";
 
-export function JobPageApplication({ job }: { job: JobListing }) {
+export function JobPageApplication({ job }: { job: { id: string; title: string } }) {
   const [submitted, setSubmitted] = useState(false);
   const router = useRouter();
 
   return submitted ? (
-    <ApplicationReceived job={job} onClose={() => router.push("/careers")} />
+    <ApplicationReceived job={job} onClose={() => router.push("/careers#open-roles")} closeLabel="Browse more roles" />
   ) : (
-    <JobDetails job={job} headingLevel="h2" onSubmitted={() => setSubmitted(true)} />
+    <ApplicationForm job={job} onSubmitted={() => setSubmitted(true)} />
   );
 }

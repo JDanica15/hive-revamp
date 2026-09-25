@@ -15,6 +15,23 @@ export async function createEntity(entity: string, data: Record<string, unknown>
   return res.json();
 }
 
+/** Uploads a file to Base44 storage (Core.UploadFile) and returns its public URL. */
+export async function uploadFile(file: Blob, filename: string): Promise<string> {
+  const body = new FormData();
+  body.append("file", file, filename);
+  const res = await fetch(`${BASE44_SERVER}/api/apps/${BASE44_APP_ID}/integration-endpoints/Core/UploadFile`, {
+    method: "POST",
+    headers: { "X-App-Id": BASE44_APP_ID },
+    body,
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Base44 upload failed: ${res.status} ${await res.text().catch(() => "")}`);
+  const json = (await res.json()) as { file_url?: string; url?: string };
+  const url = json.file_url ?? json.url;
+  if (!url) throw new Error("Base44 upload returned no file URL");
+  return url;
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Picks the allowed string fields from an untrusted body, trimmed and length-limited. */

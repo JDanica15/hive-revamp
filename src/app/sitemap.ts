@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getEvents, getOpenJobs } from "@/lib/data";
+import { ALBUMS } from "@/lib/gallery";
 import { absoluteUrl } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -27,6 +28,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: latest(events.map((e) => e.updated_date ?? e.date)),
       changeFrequency: "monthly",
       priority: 0.7,
+    },
+    {
+      url: absoluteUrl("/gallery"),
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.6,
+      images: ALBUMS.flatMap((album) => album.photos).map((src) => absoluteUrl(src)),
     },
     ...events.map((event) => ({
       url: absoluteUrl(`/events/${event.id}`),
