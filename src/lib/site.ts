@@ -8,14 +8,10 @@ export const SITE_TITLE = "Hive BPO — Scale Through Human Intelligence";
 export const SITE_DESCRIPTION =
   "Hive BPO — Strategic HR outsourcing, bookkeeping, and customer service solutions. Scale your business through human intelligence.";
 
-export const LOGO_URL = "https://hivebpo.com/wp-content/uploads/2024/08/cropped-image00124.png";
+/** Site logo, hosted locally (originally hivebpo.com/wp-content/uploads/2024/08/cropped-image00124.png). */
+export const LOGO_URL = "/media/hive-bpo-logo.png";
 export const HERO_VIDEO = "/media/42154-431423229_large-evpzfi.mp4";
 export const PLACEHOLDER_IMAGE = "/media/12d367_4f26ccd17f8f4e3a8958306ea08c2332_-98l26c.png";
-
-/** Base44 backend that stores inquiries and job applications. */
-export const BASE44_SERVER = process.env.BASE44_SERVER_URL || "https://hive-pro-scale.base44.app";
-export const BASE44_APP_ID = process.env.BASE44_APP_ID || "6ab07b887821790aceede340";
-export const ADMIN_URL = `${BASE44_SERVER}/admin`;
 
 export const CONTACT = {
   email: "hello@hivebpo.com",

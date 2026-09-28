@@ -1,7 +1,7 @@
 import { AppLink } from "@/components/AppLink";
 import { Facebook, Linkedin } from "@/components/icons";
 import { Logo } from "@/components/Logo";
-import { ADMIN_URL, CONTACT, NAV_LINKS, SOCIAL } from "@/lib/site";
+import { CONTACT, NAV_LINKS, SOCIAL } from "@/lib/site";
 
 export function Footer() {
   return (
@@ -79,7 +79,7 @@ export function Footer() {
             <AppLink href="/#contact" className="hover:text-background">
               Terms
             </AppLink>
-            <a href={ADMIN_URL} rel="nofollow" className="hover:text-background">
+            <a href="/admin" rel="nofollow" className="hover:text-background">
               Admin
             </a>
           </div>

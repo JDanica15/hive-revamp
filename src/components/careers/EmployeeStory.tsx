@@ -21,14 +21,23 @@ export function EmployeeStory({ story }: { story: Testimonial }) {
         </div>
         <figure className="lg:col-span-8">
           <p className="text-accent text-sm font-medium tracking-[0.25em] uppercase mb-6">Life at Hive</p>
-          <blockquote className="font-heading text-3xl lg:text-4xl font-medium leading-snug text-balance">
+          <blockquote
+            className={
+              "font-heading font-medium whitespace-pre-line " +
+              (story.quote.length > 280
+                ? "text-xl lg:text-2xl leading-relaxed"
+                : "text-3xl lg:text-4xl leading-snug text-balance")
+            }
+          >
             &ldquo;{story.quote}&rdquo;
           </blockquote>
           <figcaption className="mt-10 pt-8 border-t border-background/15 flex flex-wrap items-end justify-between gap-6">
             <div>
               <p className="font-heading text-lg font-semibold">{story.employee_name}</p>
               <p className="text-background/60 text-sm">
-                {story.role} · {story.years_at_company} years at Hive
+                {[story.role, story.years_at_company != null && `${story.years_at_company} years at Hive`]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             </div>
             <AppLink

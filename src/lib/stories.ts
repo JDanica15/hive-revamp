@@ -18,9 +18,6 @@ const story = (name: string, slug: string, role?: string): VideoStory => ({
   poster: `/media/stories/${slug}.jpg`,
 });
 
-/** Landscape (16:9) video shown large at the top. */
-export const FEATURED_STORY = story("Mae Anne Delfino", "mae-anne-delfino");
-
 /** Portrait (phone) videos shown in the scrolling row. */
 export const VIDEO_STORIES: VideoStory[] = [
   story("Jiliane Armena", "jiliane-armena"),

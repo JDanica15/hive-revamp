@@ -24,9 +24,12 @@ export const metadata: Metadata = {
   twitter: { title: `${TITLE} | Hive BPO`, description: DESCRIPTION },
 };
 
-export default function CareersPage() {
-  const jobs = getOpenJobs();
-  const story = getTestimonials().find((t) => (t.testimonial_type || "employee") === "employee");
+// Job listings come from Base44; re-check every 5 minutes.
+export const revalidate = 300;
+
+export default async function CareersPage() {
+  const jobs = await getOpenJobs();
+  const story = getTestimonials().find((t) => (t.testimonial_type || "employee") === "employee" && t.quote);
   const stats = {
     openRoles: jobs.length,
     teams: new Set(jobs.map((j) => j.department)).size,

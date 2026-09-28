@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createEntity, isEmail, pickFields } from "@/lib/base44";
+import { db } from "@/lib/supabase";
+import { isEmail, pickFields } from "@/lib/validate";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -10,10 +11,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    await createEntity("Inquiry", { ...data, service_interest: data.service_interest || "General Inquiry" });
+    const { error } = await db()
+      .from("inquiries")
+      .insert({ ...data, service_interest: data.service_interest || "General Inquiry" });
+    if (error) throw error;
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {
-    console.error(err);
+    console.error("Inquiry insert failed:", err);
     return NextResponse.json({ error: "Could not send your inquiry." }, { status: 502 });
   }
 }

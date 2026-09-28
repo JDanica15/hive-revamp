@@ -13,14 +13,16 @@ import { OG_DEFAULTS } from "@/lib/site";
 
 type Params = { params: Promise<{ id: string }> };
 
-export const dynamicParams = false;
+// Jobs come from Base44: re-check every 5 minutes, and build pages for newly posted jobs on first visit.
+export const revalidate = 300;
+export const dynamicParams = true;
 
-export function generateStaticParams() {
-  return getOpenJobs().map((job) => ({ id: job.id }));
+export async function generateStaticParams() {
+  return (await getOpenJobs()).map((job) => ({ id: job.id }));
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const job = getJob((await params).id);
+  const job = await getJob((await params).id);
   if (!job) return {};
   const title = `${job.title} — ${job.department} Job (${job.location})`;
   const description = `${job.summary} ${job.employment_type} role at Hive BPO. Apply online today.`;
@@ -35,9 +37,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function JobPage({ params }: Params) {
-  const job = getJob((await params).id);
+  const job = await getJob((await params).id);
   if (!job) notFound();
-  const others = getOpenJobs().filter((j) => j.id !== job.id);
+  const others = (await getOpenJobs()).filter((j) => j.id !== job.id);
   const related = [...others.filter((j) => j.department === job.department), ...others.filter((j) => j.department !== job.department)].slice(0, 3);
 
   return (

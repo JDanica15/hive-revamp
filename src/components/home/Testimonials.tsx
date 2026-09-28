@@ -90,7 +90,9 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
                 <p className="text-background font-medium text-sm">{t.employee_name}</p>
-                <p className="text-background/70 text-xs">{tab === "employee" ? t.role : t.client_title || t.role}</p>
+                {(tab === "employee" ? t.role : t.client_title || t.role) && (
+                  <p className="text-background/70 text-xs">{tab === "employee" ? t.role : t.client_title || t.role}</p>
+                )}
               </div>
             </button>
           ))}
@@ -104,30 +106,52 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4 }}
             >
-              <div className="text-accent font-heading text-6xl leading-none mb-6" aria-hidden="true">
-                &quot;
-              </div>
-              <blockquote className="font-heading text-2xl lg:text-3xl font-medium leading-snug text-balance">
-                {active.quote}
-              </blockquote>
-              <figcaption className="mt-10 pt-8 border-t border-border flex items-center justify-between">
+              {active.quote && (
+                <>
+                  <div className="text-accent font-heading text-6xl leading-none mb-6" aria-hidden="true">
+                    &quot;
+                  </div>
+                  <blockquote
+                    className={
+                      "font-heading font-medium whitespace-pre-line " +
+                      (active.quote.length > 280
+                        ? "text-lg lg:text-xl leading-relaxed"
+                        : "text-2xl lg:text-3xl leading-snug text-balance")
+                    }
+                  >
+                    {active.quote}
+                  </blockquote>
+                </>
+              )}
+              <figcaption
+                className={
+                  "flex items-center justify-between " + (active.quote ? "mt-10 pt-8 border-t border-border" : "")
+                }
+              >
                 <div>
-                  <p className="font-heading text-lg font-semibold">{active.employee_name}</p>
-                  {tab === "employee" ? (
-                    <p className="text-muted-foreground text-sm">
-                      {active.role} · {active.department}
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">
-                      {active.client_title} · {active.client_company}
-                    </p>
-                  )}
+                  <p
+                    className={
+                      "font-heading font-semibold " + (active.quote ? "text-lg" : "text-3xl lg:text-4xl font-medium")
+                    }
+                  >
+                    {active.employee_name}
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    {(tab === "employee"
+                      ? [active.role, active.department]
+                      : [active.client_title, active.client_company]
+                    )
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
                 </div>
                 {tab === "employee" ? (
-                  <div className="text-right">
-                    <p className="font-heading text-3xl font-semibold text-accent">{active.years_at_company}</p>
-                    <p className="text-xs text-muted-foreground tracking-wider uppercase">Years at Hive</p>
-                  </div>
+                  active.years_at_company != null && (
+                    <div className="text-right">
+                      <p className="font-heading text-3xl font-semibold text-accent">{active.years_at_company}</p>
+                      <p className="text-xs text-muted-foreground tracking-wider uppercase">Years at Hive</p>
+                    </div>
+                  )
                 ) : (
                   <div className="text-right">
                     <p className="font-heading text-lg font-semibold text-accent">{active.client_company}</p>

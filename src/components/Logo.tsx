@@ -2,7 +2,7 @@ import { LOGO_URL, SITE_NAME } from "@/lib/site";
 
 export function Logo({ variant = "dark", className = "" }: { variant?: "dark" | "light"; className?: string }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- remote logo is served as-is, like the original site
+    // eslint-disable-next-line @next/next/no-img-element -- small logo, served as-is
     <img
       src={LOGO_URL}
       alt={SITE_NAME}

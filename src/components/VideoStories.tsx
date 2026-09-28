@@ -7,7 +7,7 @@ import { Lightbox } from "@/components/events/Lightbox";
 import { ArrowUpRight, ChevronLeft, ChevronRight, Play } from "@/components/icons";
 import { SmartImage } from "@/components/SmartImage";
 import { VideoModal } from "@/components/VideoModal";
-import { FEATURED_STORY, MOMENTS, VIDEO_STORIES, type VideoStory } from "@/lib/stories";
+import { MOMENTS, VIDEO_STORIES, type VideoStory } from "@/lib/stories";
 
 export function VideoStories() {
   const [playing, setPlaying] = useState<VideoStory | null>(null);
@@ -38,41 +38,6 @@ export function VideoStories() {
           Real voices, real experiences. Short video stories from the team members who make Hive, Hive.
         </p>
       </div>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-        className="mb-6"
-      >
-        <button
-          type="button"
-          onClick={() => setPlaying(FEATURED_STORY)}
-          aria-label={`Play ${FEATURED_STORY.name}'s video story`}
-          className="relative block aspect-video w-full rounded-sm overflow-hidden bg-foreground group cursor-pointer text-left"
-        >
-          <SmartImage
-            src={FEATURED_STORY.poster}
-            alt=""
-            fill
-            sizes="(min-width: 1280px) 1184px, 100vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-transparent to-foreground/30" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-20 h-20 rounded-full bg-background/90 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <Play className="w-7 h-7 text-foreground ml-1" fill="currentColor" />
-            </div>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-foreground/90 to-transparent">
-            <p className="text-background font-heading text-xl font-semibold">{FEATURED_STORY.name}</p>
-            {FEATURED_STORY.role && <p className="text-background/70 text-sm">{FEATURED_STORY.role}</p>}
-          </div>
-          <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-background/20 backdrop-blur-sm text-background text-xs tracking-wider uppercase">
-            Featured
-          </div>
-        </button>
-      </motion.div>
       <div className="relative mb-16">
         <div
           ref={rowRef}

@@ -1,5 +1,8 @@
-// Site content. These JSON files are a snapshot of the Base44 entities
-// (Testimonial, Event, JobListing); edit them to update the site.
+// Site content. Job listings come from Supabase (manage them at /admin/jobs). jobs.json is only
+// used when Supabase isn't configured, e.g. local development. Testimonials and events come
+// from the JSON files here; edit them to update the site.
+import "server-only";
+import { db, isSupabaseConfigured } from "@/lib/supabase";
 import eventsJson from "@/data/events.json";
 import jobsJson from "@/data/jobs.json";
 import testimonialsJson from "@/data/testimonials.json";
@@ -57,13 +60,25 @@ export function getEvent(id: string): HiveEvent | undefined {
   return getEvents().find((e) => e.id === id);
 }
 
-/** Open job listings, most recently posted first. */
-export function getOpenJobs(): JobListing[] {
-  return (jobsJson as JobListing[])
-    .filter((j) => j.status === "open")
-    .sort((a, b) => b.posted_date.localeCompare(a.posted_date));
+/**
+ * Open job listings, most recently posted first. If Supabase errors this throws rather than
+ * falling back, so Next keeps serving the last good page instead of re-showing closed jobs.
+ */
+export async function getOpenJobs(): Promise<JobListing[]> {
+  if (!isSupabaseConfigured) {
+    return (jobsJson as JobListing[])
+      .filter((j) => j.status === "open")
+      .sort((a, b) => b.posted_date.localeCompare(a.posted_date));
+  }
+  const { data, error } = await db()
+    .from("job_listings")
+    .select("*")
+    .eq("status", "open")
+    .order("posted_date", { ascending: false });
+  if (error) throw new Error(`Could not load job listings: ${error.message}`);
+  return data as JobListing[];
 }
 
-export function getJob(id: string): JobListing | undefined {
-  return getOpenJobs().find((j) => j.id === id);
+export async function getJob(id: string): Promise<JobListing | undefined> {
+  return (await getOpenJobs()).find((j) => j.id === id);
 }

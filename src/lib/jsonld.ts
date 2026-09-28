@@ -24,7 +24,7 @@ export function organizationJsonLd() {
     alternateName: "Hive Solutions Professional",
     description: SITE_DESCRIPTION,
     url: SITE_URL,
-    logo: LOGO_URL,
+    logo: absoluteUrl(LOGO_URL),
     image: absoluteUrl("/opengraph-image"),
     email: CONTACT.email,
     telephone: CONTACT.phone.replace(/\s/g, ""),
@@ -105,7 +105,7 @@ export function jobPostingJsonLd(job: JobListing) {
     occupationalCategory: job.department,
     directApply: true,
     url: absoluteUrl(`/careers/${job.id}`),
-    hiringOrganization: { "@type": "Organization", "@id": ORG_ID, name: SITE_NAME, sameAs: SITE_URL, logo: LOGO_URL },
+    hiringOrganization: { "@type": "Organization", "@id": ORG_ID, name: SITE_NAME, sameAs: SITE_URL, logo: absoluteUrl(LOGO_URL) },
     ...(onsite || !remote ? { jobLocation: { "@type": "Place", address: postalAddress } } : {}),
     ...(remote
       ? {

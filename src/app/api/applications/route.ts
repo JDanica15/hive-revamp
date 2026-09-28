@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { createEntity, isEmail, uploadFile } from "@/lib/base44";
 import { GENERAL_APPLICATION, RESUME_REQUIRED, RESUME_TYPES, resumeProblem } from "@/lib/careers";
 import { getJob } from "@/lib/data";
+import { RESUME_BUCKET, db } from "@/lib/supabase";
+import { isEmail } from "@/lib/validate";
 
 // Checks the file's leading bytes so a renamed executable can't pass as a resume.
 function looksLikeDocument(bytes: Uint8Array, ext: string) {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
   if (field(form, "company_website", 200)) return NextResponse.json({ ok: true }, { status: 201 });
 
   const jobId = field(form, "job_listing_id", 64);
-  const job = jobId === GENERAL_APPLICATION.id ? GENERAL_APPLICATION : getJob(jobId);
+  const job = jobId === GENERAL_APPLICATION.id ? GENERAL_APPLICATION : await getJob(jobId);
   const data = {
     applicant_name: field(form, "applicant_name", 200),
     applicant_email: field(form, "applicant_email", 320),
@@ -50,7 +51,8 @@ export async function POST(request: Request) {
   const hasResume = resume instanceof File && resume.size > 0;
   if (!hasResume && RESUME_REQUIRED) return fail("Please attach your resume.");
 
-  let resumeUrl = "";
+  // Resumes go to the private "resumes" bucket; the admin panel opens them via short-lived signed links.
+  let resumePath = "";
   if (hasResume) {
     const problem = resumeProblem(resume);
     const ext = resume.name.split(".").pop()!.toLowerCase();
@@ -59,22 +61,19 @@ export async function POST(request: Request) {
     if (!looksLikeDocument(bytes, ext)) return fail("That file doesn't look like a valid PDF or Word document.");
 
     const safeName = `${data.applicant_name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "applicant"}-resume.${ext}`;
-    try {
-      resumeUrl = await uploadFile(new Blob([bytes], { type: RESUME_TYPES[ext] }), safeName);
-    } catch (err) {
-      console.error(err);
+    resumePath = `${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}/${safeName}`;
+    const { error } = await db().storage.from(RESUME_BUCKET).upload(resumePath, bytes, { contentType: RESUME_TYPES[ext] });
+    if (error) {
+      console.error("Resume upload failed:", error);
       return fail("We couldn't upload your resume. Please try again.", 502);
     }
   }
 
   try {
-    await createEntity("JobApplication", {
-      ...data,
-      cover_note: portfolio ? `${data.cover_note}\n\nPortfolio / LinkedIn: ${portfolio}` : data.cover_note,
-      resume_url: resumeUrl,
-      job_listing_id: job.id,
-      job_title: job.title,
-    });
+    const { error } = await db()
+      .from("job_applications")
+      .insert({ ...data, portfolio_url: portfolio, resume_path: resumePath, job_listing_id: job.id, job_title: job.title });
+    if (error) throw error;
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {
     console.error(err);

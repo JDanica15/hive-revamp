@@ -3,9 +3,11 @@ import { getEvents, getOpenJobs } from "@/lib/data";
 import { ALBUMS } from "@/lib/gallery";
 import { absoluteUrl } from "@/lib/site";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export const revalidate = 300;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const events = getEvents();
-  const jobs = getOpenJobs();
+  const jobs = await getOpenJobs();
   const latest = (dates: (string | undefined)[]) =>
     dates.filter(Boolean).sort().at(-1)?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
 
