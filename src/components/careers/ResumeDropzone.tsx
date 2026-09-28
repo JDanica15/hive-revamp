@@ -4,18 +4,27 @@ import { useId, useRef, useState, type DragEvent } from "react";
 import { FileText, Trash2, Upload } from "@/components/icons";
 import { RESUME_ACCEPT, RESUME_REQUIRED, formatBytes, resumeProblem } from "@/lib/careers";
 
-type Props = { file: File | null; onChange: (file: File | null) => void };
+type Props = {
+  file: File | null;
+  onChange: (file: File | null) => void;
+  /** Message to show under the box (from the form's validation). */
+  error?: string;
+  /** Called with a problem (wrong type, too big) or null when a valid file is picked. */
+  onError: (message: string | null) => void;
+  /** id for the hidden file input, so the form can focus it. */
+  inputId?: string;
+};
 
-export function ResumeDropzone({ file, onChange }: Props) {
-  const id = useId();
+export function ResumeDropzone({ file, onChange, error, onError, inputId }: Props) {
+  const generatedId = useId();
+  const id = inputId ?? generatedId;
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
-  const [error, setError] = useState("");
 
   const pick = (candidate: File | undefined | null) => {
     if (!candidate) return;
     const problem = resumeProblem(candidate);
-    setError(problem ?? "");
+    onError(problem);
     if (!problem) onChange(candidate);
     if (inputRef.current) inputRef.current.value = "";
   };
@@ -38,7 +47,8 @@ export function ResumeDropzone({ file, onChange }: Props) {
         name="resume-picker"
         accept={RESUME_ACCEPT}
         aria-labelledby={`${id}-label`}
-        aria-describedby={`${id}-hint`}
+        aria-describedby={error ? `${id}-error` : `${id}-hint`}
+        aria-invalid={error ? true : undefined}
         className="peer sr-only"
         onChange={(e) => pick(e.target.files?.[0])}
       />
@@ -56,7 +66,10 @@ export function ResumeDropzone({ file, onChange }: Props) {
           </label>
           <button
             type="button"
-            onClick={() => onChange(null)}
+            onClick={() => {
+              onChange(null);
+              if (RESUME_REQUIRED) onError("Please attach your resume.");
+            }}
             className="p-2 rounded-full text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
             aria-label="Remove resume"
           >
@@ -74,7 +87,11 @@ export function ResumeDropzone({ file, onChange }: Props) {
           onDrop={onDrop}
           className={
             "flex flex-col items-center justify-center text-center gap-2 px-6 py-8 border border-dashed rounded-sm cursor-pointer transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent " +
-            (dragging ? "border-accent bg-accent/5" : "border-border bg-card/60 hover:border-accent hover:bg-accent/5")
+            (dragging
+              ? "border-accent bg-accent/5"
+              : error
+                ? "border-destructive bg-destructive/5"
+                : "border-border bg-card/60 hover:border-accent hover:bg-accent/5")
           }
         >
           <span className="w-11 h-11 rounded-full bg-accent/10 flex items-center justify-center mb-1">
@@ -90,7 +107,7 @@ export function ResumeDropzone({ file, onChange }: Props) {
         </label>
       )}
       {error && (
-        <p className="text-destructive text-sm mt-2" role="alert">
+        <p id={`${id}-error`} className="text-destructive text-sm mt-2">
           {error}
         </p>
       )}

@@ -73,6 +73,14 @@ drop trigger if exists job_applications_updated on job_applications;
 create trigger job_applications_updated before update on job_applications
   for each row execute function set_updated_date();
 
+-- Rate limiting (see src/lib/request-guard.ts). Stores a salted hash of the visitor's IP, never the IP.
+create table if not exists rate_limits (
+  id         bigint generated always as identity primary key,
+  bucket     text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists rate_limits_bucket_idx on rate_limits (bucket, created_at desc);
+
 create index if not exists inquiries_created_idx on inquiries (created_date desc);
 create index if not exists job_applications_created_idx on job_applications (created_date desc);
 create index if not exists job_listings_status_idx on job_listings (status, posted_date desc);
@@ -81,11 +89,12 @@ create index if not exists job_listings_status_idx on job_listings (status, post
 alter table job_listings     enable row level security;
 alter table inquiries        enable row level security;
 alter table job_applications enable row level security;
+alter table rate_limits      enable row level security;
 
 drop policy if exists "Anyone can read open jobs" on job_listings;
 create policy "Anyone can read open jobs" on job_listings
   for select to anon, authenticated using (status = 'open');
--- No other policies: inquiries and applications are unreadable without the service role key.
+-- No other policies: inquiries, applications and rate limits are unreadable without the secret key.
 
 -- Resume storage (private bucket; the admin panel opens files through short-lived signed links).
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

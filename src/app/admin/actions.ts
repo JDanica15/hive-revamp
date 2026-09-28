@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   APPLICATION_STATUSES,
@@ -10,22 +11,30 @@ import {
   isAdminEmail,
   requireAdmin,
 } from "@/lib/admin";
+import { TOO_MANY, clientId, withinRateLimit } from "@/lib/request-guard";
 import { authClient, db, isSupabaseConfigured } from "@/lib/supabase";
+import { clean, isEmail } from "@/lib/validate";
 
 // Every action re-checks the admin session: Server Actions are public endpoints.
 
 export async function signIn(_prev: { error: string } | null, form: FormData) {
   if (!isSupabaseConfigured) return { error: "The admin panel isn't set up yet (Supabase environment variables are missing)." };
-  const email = String(form.get("email") ?? "").trim();
-  const password = String(form.get("password") ?? "");
+  const email = clean(form.get("email"), 254).toLowerCase();
+  const password = typeof form.get("password") === "string" ? String(form.get("password")).slice(0, 200) : "";
   if (!email || !password) return { error: "Enter your email and password." };
+  if (!isEmail(email)) return { error: "Enter a valid email address." };
+
+  // Slows down password guessing: per visitor, and per account from any visitor.
+  if (!(await withinRateLimit("login", await clientId())) || !(await withinRateLimit("loginEmail", email))) {
+    return { error: TOO_MANY };
+  }
 
   const supabase = await authClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error || !data.user) return { error: "Incorrect email or password." };
-  if (!isAdminEmail(data.user.email)) {
-    await supabase.auth.signOut();
-    return { error: "This account doesn't have admin access." };
+  // Same message for a wrong password and a non-admin account, so the form doesn't reveal which accounts exist.
+  if (error || !data.user || !isAdminEmail(data.user.email)) {
+    if (data?.user) await supabase.auth.signOut();
+    return { error: "Incorrect email or password." };
   }
   redirect("/admin");
 }
@@ -34,6 +43,50 @@ export async function signOut() {
   const supabase = await authClient();
   await supabase.auth.signOut();
   redirect("/admin/login");
+}
+
+type FormState = { error?: string; sent?: boolean } | null;
+
+/**
+ * Emails a password-reset link (sent by Supabase Auth). Only admin emails get one, and the
+ * reply is the same either way, so the form can't be used to discover which emails exist.
+ */
+export async function requestPasswordReset(_prev: FormState, form: FormData): Promise<FormState> {
+  if (!isSupabaseConfigured) return { error: "The admin panel isn't set up yet (Supabase environment variables are missing)." };
+  const email = clean(form.get("email"), 254).toLowerCase();
+  if (!email) return { error: "Enter your email." };
+  if (!isEmail(email)) return { error: "Enter a valid email address." };
+  if (!(await withinRateLimit("passwordReset", await clientId()))) return { error: TOO_MANY };
+
+  if (isAdminEmail(email)) {
+    const h = await headers();
+    const origin = h.get("origin") ?? `https://${h.get("x-forwarded-host") ?? h.get("host")}`;
+    const supabase = await authClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${origin}/admin/auth/confirm?next=/admin/reset-password`,
+    });
+    if (error) {
+      console.error("Password reset email failed:", error);
+      if (error.status === 429) return { error: "Too many reset emails were sent recently. Please wait a few minutes and try again." };
+      return { error: "We couldn't send the email. Please try again." };
+    }
+  }
+  return { sent: true };
+}
+
+/** Sets a new password for the signed-in admin (after following the reset link). */
+export async function updatePassword(_prev: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const password = String(form.get("password") ?? "");
+  const confirm = String(form.get("confirm") ?? "");
+  if (password.length < 8) return { error: "Use at least 8 characters." };
+  if (password.length > 72) return { error: "Use 72 characters or fewer." };
+  if (password !== confirm) return { error: "The two passwords don't match." };
+
+  const supabase = await authClient();
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: error.message || "We couldn't update your password." };
+  redirect("/admin");
 }
 
 /** Refreshes every public page that lists jobs, so admin changes show immediately. */

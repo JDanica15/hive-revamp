@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { signIn } from "@/app/admin/actions";
 import { CircleAlert, LoaderCircle } from "@/components/icons";
@@ -17,9 +18,14 @@ export function LoginForm() {
         <input id="email" name="email" type="email" autoComplete="email" required placeholder="you@example.com" className={FIELD} />
       </div>
       <div>
-        <label htmlFor="password" className={LABEL}>
-          Password
-        </label>
+        <div className="flex items-baseline justify-between">
+          <label htmlFor="password" className={LABEL}>
+            Password
+          </label>
+          <Link href="/admin/forgot-password" className="text-xs text-muted-foreground hover:text-accent mb-2">
+            Forgot password?
+          </Link>
+        </div>
         <input id="password" name="password" type="password" autoComplete="current-password" required className={FIELD} />
       </div>
       {state?.error && (

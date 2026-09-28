@@ -1,44 +1,113 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { Check, LoaderCircle } from "@/components/icons";
+import { useRef, useState, type FormEvent } from "react";
+import { Check, CircleAlert, LoaderCircle } from "@/components/icons";
+import {
+  INQUIRY_LIMITS,
+  SERVICE_OPTIONS,
+  cleanInquiry,
+  validateInquiry,
+  type FieldErrors,
+  type InquiryFields,
+} from "@/lib/validate";
 
-const SERVICE_OPTIONS = [
-  "HR Outsourcing",
-  "Bookkeeping & Finance",
-  "Customer Service",
-  "Admin Support",
-  "Flexible Staffing",
-  "General Inquiry",
-];
-
-const EMPTY = { name: "", email: "", company: "", service_interest: "General Inquiry", message: "" };
+const EMPTY: InquiryFields = { name: "", email: "", company: "", service_interest: "General Inquiry", message: "" };
+const FIELD_ORDER: (keyof InquiryFields)[] = ["name", "email", "company", "service_interest", "message"];
+const IDS: Record<keyof InquiryFields, string> = {
+  name: "contact-name",
+  email: "contact-email",
+  company: "contact-company",
+  service_interest: "contact-service",
+  message: "contact-message",
+};
 
 const LABEL = "block text-xs tracking-wider uppercase text-muted-foreground mb-1";
 const FIELD =
-  "w-full bg-transparent border-b border-border py-3 px-0 text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none transition-colors";
+  "w-full bg-transparent border-b py-3 px-0 text-foreground placeholder:text-muted-foreground focus:outline-none transition-colors";
+const fieldClass = (invalid: boolean) =>
+  FIELD + (invalid ? " border-destructive focus:border-destructive" : " border-border focus:border-accent");
 
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <p id={id} className="flex items-start gap-1.5 text-destructive text-sm mt-2">
+      <CircleAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+      {message}
+    </p>
+  );
+}
+
+/** Contact form. Fields are checked here with the same rules the server uses (src/lib/validate.ts). */
 export function ContactForm() {
+  const formRef = useRef<HTMLFormElement>(null);
   const [form, setForm] = useState(EMPTY);
+  const [errors, setErrors] = useState<FieldErrors<keyof InquiryFields>>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof InquiryFields, boolean>>>({});
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
 
-  const onSubmit = async (e: FormEvent) => {
+  const checkField = (key: keyof InquiryFields, values: InquiryFields) => validateInquiry(cleanInquiry(values))[key];
+  const setFieldError = (key: keyof InquiryFields, message: string | undefined) =>
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[key] = message;
+      else delete next[key];
+      return next;
+    });
+
+  const onChange = (key: keyof InquiryFields) => (e: { target: { value: string } }) => {
+    const next = { ...form, [key]: e.target.value };
+    setForm(next);
+    if (touched[key]) setFieldError(key, checkField(key, next));
+  };
+  const onBlur = (key: keyof InquiryFields) => () => {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+    setFieldError(key, checkField(key, form));
+  };
+  const focusFirst = (found: FieldErrors<keyof InquiryFields>) => {
+    const first = FIELD_ORDER.find((key) => found[key]);
+    if (first) formRef.current?.querySelector<HTMLElement>(`#${IDS[first]}`)?.focus();
+  };
+  const a11y = (key: keyof InquiryFields) => ({
+    "aria-invalid": errors[key] ? true : undefined,
+    "aria-describedby": errors[key] ? `${IDS[key]}-error` : undefined,
+  });
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setFormError("");
+    const values = cleanInquiry(form);
+    const found = validateInquiry(values);
+    setTouched(Object.fromEntries(FIELD_ORDER.map((k) => [k, true])));
+    setErrors(found);
+    if (Object.keys(found).length) {
+      focusFirst(found);
+      return;
+    }
+
+    const honeypot = (e.currentTarget.elements.namedItem("company_website") as HTMLInputElement).value;
     setSending(true);
-    setError("");
     try {
       const res = await fetch("/api/inquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...values, company_website: honeypot }),
       });
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (json.errors && typeof json.errors === "object") {
+          setErrors(json.errors);
+          focusFirst(json.errors);
+        }
+        throw new Error(res.status === 429 ? json.error : "Something went wrong. Please try again or email us directly.");
+      }
       setSent(true);
       setForm(EMPTY);
-    } catch {
-      setError("Something went wrong. Please try again or email us directly.");
+      setErrors({});
+      setTouched({});
+    } catch (err) {
+      setFormError(err instanceof Error && err.message ? err.message : "Something went wrong. Please try again or email us directly.");
     } finally {
       setSending(false);
     }
@@ -62,65 +131,76 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6" aria-label="Contact Hive BPO">
+    <form ref={formRef} onSubmit={onSubmit} noValidate className="space-y-6" aria-label="Contact Hive BPO">
       <div className="grid sm:grid-cols-2 gap-6">
         <div>
-          <label htmlFor="contact-name" className={LABEL}>
+          <label htmlFor={IDS.name} className={LABEL}>
             Name *
           </label>
           <input
-            id="contact-name"
+            id={IDS.name}
             name="name"
             autoComplete="name"
-            required
+            maxLength={INQUIRY_LIMITS.name}
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className={FIELD}
+            onChange={onChange("name")}
+            onBlur={onBlur("name")}
+            {...a11y("name")}
+            className={fieldClass(!!errors.name)}
             placeholder="Your full name"
           />
+          <FieldError id={`${IDS.name}-error`} message={errors.name} />
         </div>
         <div>
-          <label htmlFor="contact-email" className={LABEL}>
+          <label htmlFor={IDS.email} className={LABEL}>
             Email *
           </label>
           <input
-            id="contact-email"
+            id={IDS.email}
             name="email"
-            autoComplete="email"
-            required
             type="email"
+            inputMode="email"
+            autoComplete="email"
+            maxLength={INQUIRY_LIMITS.email}
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className={FIELD}
+            onChange={onChange("email")}
+            onBlur={onBlur("email")}
+            {...a11y("email")}
+            className={fieldClass(!!errors.email)}
             placeholder="you@company.com"
           />
+          <FieldError id={`${IDS.email}-error`} message={errors.email} />
         </div>
       </div>
       <div className="grid sm:grid-cols-2 gap-6">
         <div>
-          <label htmlFor="contact-company" className={LABEL}>
+          <label htmlFor={IDS.company} className={LABEL}>
             Company
           </label>
           <input
-            id="contact-company"
+            id={IDS.company}
             name="company"
             autoComplete="organization"
+            maxLength={INQUIRY_LIMITS.company}
             value={form.company}
-            onChange={(e) => setForm({ ...form, company: e.target.value })}
-            className={FIELD}
+            onChange={onChange("company")}
+            onBlur={onBlur("company")}
+            {...a11y("company")}
+            className={fieldClass(!!errors.company)}
             placeholder="Company name"
           />
+          <FieldError id={`${IDS.company}-error`} message={errors.company} />
         </div>
         <div>
-          <label htmlFor="contact-service" className={LABEL}>
+          <label htmlFor={IDS.service_interest} className={LABEL}>
             Service Interest
           </label>
           <select
-            id="contact-service"
+            id={IDS.service_interest}
             name="service_interest"
             value={form.service_interest}
-            onChange={(e) => setForm({ ...form, service_interest: e.target.value })}
-            className={FIELD}
+            onChange={onChange("service_interest")}
+            className={fieldClass(false)}
           >
             {SERVICE_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -131,23 +211,31 @@ export function ContactForm() {
         </div>
       </div>
       <div>
-        <label htmlFor="contact-message" className={LABEL}>
+        <label htmlFor={IDS.message} className={LABEL}>
           Message *
         </label>
         <textarea
-          id="contact-message"
+          id={IDS.message}
           name="message"
-          required
-          value={form.message}
-          onChange={(e) => setForm({ ...form, message: e.target.value })}
           rows={4}
-          className="w-full bg-transparent border-b border-border py-3 px-0 text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none transition-colors resize-none"
+          maxLength={INQUIRY_LIMITS.messageMax}
+          value={form.message}
+          onChange={onChange("message")}
+          onBlur={onBlur("message")}
+          {...a11y("message")}
+          className={fieldClass(!!errors.message) + " resize-none"}
           placeholder="Tell us about your needs..."
         />
+        <FieldError id={`${IDS.message}-error`} message={errors.message} />
       </div>
-      {error && (
-        <p className="text-destructive text-sm" role="alert">
-          {error}
+
+      {/* Honeypot for bots — hidden from people and assistive tech. */}
+      <input type="text" name="company_website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+
+      {formError && (
+        <p className="flex items-start gap-2 text-destructive text-sm" role="alert">
+          <CircleAlert className="w-4 h-4 mt-0.5 shrink-0" />
+          {formError}
         </p>
       )}
       <button
