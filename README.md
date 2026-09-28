@@ -42,9 +42,9 @@ The site stores job listings, contact inquiries, job applications and resumes in
 1. Create a Supabase project (the Sydney region is closest).
 2. In **SQL Editor**, run `supabase/schema.sql` (tables, security rules, resume bucket), then `supabase/seed.sql` (the current job listings, keeping their URLs).
 3. In **Authentication → Sign In / Providers**, turn off **Allow new users to sign up**. Then in **Authentication → Users → Add user**, create a login for each admin (tick *Auto Confirm User*).
-4. In Vercel (**Settings → Environment Variables**), set `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (from Supabase **Project Settings → API**) and `ADMIN_EMAILS` (the admins' emails, comma-separated), then redeploy.
+4. In Vercel (**Settings → Environment Variables**), set `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (from Supabase **Project Settings → API Keys**) and `ADMIN_EMAILS` (the admins' emails, comma-separated), then redeploy.
 
-Only emails in `ADMIN_EMAILS` can use the panel. All database access goes through the server with the service role key; the public can only read open job listings. To add an admin later, create their Supabase user and add their email to `ADMIN_EMAILS`. Password resets: **Authentication → Users → ⋯ → Send password recovery**, or set a new password there.
+Only emails in `ADMIN_EMAILS` can use the panel. All database access goes through the server with the secret key; the public can only read open job listings. To add an admin later, create their Supabase user and add their email to `ADMIN_EMAILS`. Password resets: **Authentication → Users → ⋯ → Send password recovery**, or set a new password there.
 
 ## Content
 

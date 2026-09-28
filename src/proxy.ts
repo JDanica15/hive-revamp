@@ -1,16 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/lib/supabase-env";
 
 // Keeps the admin login session fresh: Supabase access tokens are short-lived, and Server
 // Components can't write cookies, so the refreshed token is set here. Access itself is checked
 // in the admin pages (requireAdmin), not here.
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_ANON_KEY;
-  if (!url || !key) return response;
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) return response;
 
-  const supabase = createServerClient(url, key, {
+  const supabase = createServerClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (list) => {
