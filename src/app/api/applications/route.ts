@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   if (Object.keys(errors).length) return fail("Please fix the highlighted fields.", 400, errors);
 
   const jobId = clean(input.job_listing_id, 64);
-  const job = jobId === GENERAL_APPLICATION.id ? GENERAL_APPLICATION : /^[A-Za-z0-9-]{1,64}$/.test(jobId) ? await getJob(jobId) : undefined;
+  const job = jobId === GENERAL_APPLICATION.id ? GENERAL_APPLICATION : await getJob(jobId);
   if (!job) return fail("This position is no longer open.");
 
   if (!(await withinRateLimit("application", await clientId()))) return fail(TOO_MANY, 429);

@@ -13,7 +13,8 @@ import { OG_DEFAULTS } from "@/lib/site";
 
 type Params = { params: Promise<{ id: string }> };
 
-// Jobs come from Base44: re-check every 5 minutes, and build pages for newly posted jobs on first visit.
+// Jobs come from Supabase: re-check every 5 minutes, and build pages for newly posted jobs on first visit.
+// Malformed ids 404 before any database query (see isJobId in src/lib/data.ts).
 export const revalidate = 300;
 export const dynamicParams = true;
 

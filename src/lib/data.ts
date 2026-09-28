@@ -79,6 +79,13 @@ export async function getOpenJobs(): Promise<JobListing[]> {
   return data as JobListing[];
 }
 
+/** Job ids are 24 (from Base44) or 32 (new, from Supabase) letters and digits. */
+export function isJobId(id: string) {
+  return /^[A-Za-z0-9]{24,32}$/.test(id);
+}
+
+/** An open job by id. Malformed ids are rejected before touching the database. */
 export async function getJob(id: string): Promise<JobListing | undefined> {
+  if (!isJobId(id)) return undefined;
   return (await getOpenJobs()).find((j) => j.id === id);
 }
