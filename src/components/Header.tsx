@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppLink } from "@/components/AppLink";
-import { ArrowUpRight, Plus, X } from "@/components/icons";
+import { Plus, X } from "@/components/icons";
 import { Logo } from "@/components/Logo";
 import { CONTACT, NAV_LINKS } from "@/lib/site";
 
@@ -43,13 +43,6 @@ export function Header() {
                 {link.label}
               </AppLink>
             ))}
-            <AppLink
-              href="/#contact"
-              className="group inline-flex items-center gap-1.5 px-5 py-2.5 bg-accent text-accent-foreground rounded-full text-sm font-medium hover:bg-accent/90 transition-colors"
-            >
-              Get a Quote
-              <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </AppLink>
           </nav>
           <button
             type="button"

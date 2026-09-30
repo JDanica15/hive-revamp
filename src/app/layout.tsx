@@ -1,7 +1,19 @@
 import type { Metadata, Viewport } from "next";
+import { Fraunces, Inter } from "next/font/google";
 import { HashScrollManager } from "@/components/AppLink";
+import { SiteCursor } from "@/components/motion/SiteCursor";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
+
+// The type this site was designed around. Loaded here (self-hosted by next/font, no layout shift)
+// and wired to the --font-* CSS variables the theme already references.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-fraunces",
+  axes: ["opsz", "SOFT", "WONK"],
+});
+const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -56,7 +68,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-AU">
+    <html lang="en-AU" className={`${fraunces.variable} ${inter.variable}`}>
       <head>
         {/* Without JavaScript, show content that would otherwise wait for its entrance animation. */}
         <noscript>
@@ -72,6 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         {children}
         <HashScrollManager />
+        <SiteCursor />
       </body>
     </html>
   );

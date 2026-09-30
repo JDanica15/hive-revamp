@@ -1,13 +1,15 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import { SmartImage } from "@/components/SmartImage";
 import type { Testimonial } from "@/lib/data";
+import { DURATION, EASE } from "@/lib/motion";
 
 type Tab = "employee" | "client";
 
 export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
+  const reduce = useReducedMotion();
   const [tab, setTab] = useState<Tab>("employee");
   const [selected, setSelected] = useState(0);
 
@@ -101,10 +103,10 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
           <AnimatePresence mode="wait">
             <motion.figure
               key={`${active.id}-${tab}`}
-              initial={{ opacity: 0, y: 20 }}
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.4 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: DURATION.editorial, ease: EASE.inOut }}
             >
               {active.quote && (
                 <>

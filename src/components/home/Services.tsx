@@ -1,19 +1,17 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Briefcase, Calculator, ClipboardList, Headphones, ShieldCheck, Users } from "@/components/icons";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useState } from "react";
+import { DURATION, EASE, SPRING_SOFT } from "@/lib/motion";
 import { SERVICES } from "@/lib/site";
 
-const ICONS = {
-  users: Users,
-  calculator: Calculator,
-  headphones: Headphones,
-  clipboard: ClipboardList,
-  briefcase: Briefcase,
-  shield: ShieldCheck,
-};
+const num = (i: number) => String(i + 1).padStart(2, "0");
 
 export function Services() {
+  const reduce = useReducedMotion() ?? false;
+  const [active, setActive] = useState(0);
+  const current = SERVICES[active];
+
   return (
     <section
       id="services"
@@ -34,25 +32,92 @@ export function Services() {
           </p>
         </div>
       </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border border border-border rounded-sm overflow-hidden">
-        {SERVICES.map((service, i) => {
-          const Icon = ICONS[service.icon];
-          return (
-            <motion.article
-              key={service.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: i * 0.05 }}
-              className="group bg-background p-8 lg:p-10 hover:bg-card transition-colors duration-300 relative"
-            >
-              <div className="absolute left-0 top-0 bottom-0 w-px bg-accent scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-top" />
-              <Icon className="w-7 h-7 text-accent mb-6" strokeWidth={1.5} />
-              <h3 className="font-heading text-2xl font-medium mb-3">{service.title}</h3>
-              <p className="text-muted-foreground leading-relaxed text-[15px]">{service.description}</p>
-            </motion.article>
-          );
-        })}
+
+      <div className="grid lg:grid-cols-12 gap-x-12 gap-y-8">
+        {/* The list. A single accent indicator tracks the active row, so attention moves rather
+            than six cards competing at once. */}
+        <ul className="lg:col-span-7 relative border-t border-border">
+          {/* Moving indicator: height of one row, translated down one row per active index. */}
+          <motion.span
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-0 w-px bg-accent"
+            style={{ height: `${100 / SERVICES.length}%` }}
+            animate={{ y: `${active * 100}%` }}
+            transition={reduce ? { duration: 0 } : SPRING_SOFT}
+          />
+          {SERVICES.map((service, i) => {
+            const isActive = i === active;
+            return (
+              <li key={service.title} className="border-b border-border">
+                <button
+                  type="button"
+                  onMouseEnter={() => setActive(i)}
+                  onFocus={() => setActive(i)}
+                  onClick={() => setActive(i)}
+                  aria-expanded={isActive}
+                  data-cursor="Explore"
+                  className="group w-full text-left flex items-baseline gap-5 h-16 md:h-20 px-1 focus:outline-none"
+                >
+                  <span
+                    className={
+                      "font-mono text-xs tabular-nums transition-colors duration-300 " +
+                      (isActive ? "text-accent" : "text-muted-foreground/60")
+                    }
+                  >
+                    {num(i)}
+                  </span>
+                  <motion.span
+                    className={
+                      "font-heading text-2xl md:text-3xl font-medium transition-colors duration-300 " +
+                      (isActive ? "text-foreground" : "text-muted-foreground/70 group-hover:text-foreground")
+                    }
+                    animate={{ x: isActive && !reduce ? 10 : 0 }}
+                    transition={{ duration: DURATION.ui, ease: EASE.out }}
+                  >
+                    {service.title}
+                  </motion.span>
+                </button>
+                {/* Inline description for mobile (no hover there) — reveals under the active row. */}
+                <div className="lg:hidden overflow-hidden">
+                  <AnimatePresence initial={false}>
+                    {isActive && (
+                      <motion.p
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: DURATION.ui, ease: EASE.out }}
+                        className="text-muted-foreground leading-relaxed text-[15px] pb-6 pl-9 pr-2"
+                      >
+                        {service.description}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Desktop detail panel: a large ghost number and the active description, crossfading. */}
+        <div className="hidden lg:block lg:col-span-5">
+          <div className="sticky top-28">
+            <div className="relative min-h-[16rem]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={active}
+                  initial={reduce ? false : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduce ? undefined : { opacity: 0, y: -12 }}
+                  transition={{ duration: DURATION.ui, ease: EASE.out }}
+                >
+                  <span className="font-heading text-[7rem] leading-none text-accent/15 select-none">{num(active)}</span>
+                  <h3 className="font-heading text-3xl font-medium mt-4 mb-4">{current.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed text-lg max-w-md">{current.description}</p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

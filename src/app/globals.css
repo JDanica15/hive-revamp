@@ -25,9 +25,9 @@
     --input: 40 15% 85%;
     --ring: 33 62% 44%;
     --radius: 0.25rem;
-    --font-heading: "Fraunces", Georgia, serif;
-    --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
-    --font-display: "Fraunces", Georgia, serif;
+    --font-heading: var(--font-fraunces), Georgia, serif;
+    --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    --font-display: var(--font-fraunces), Georgia, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
@@ -76,6 +76,37 @@
   h6 {
     font-family: var(--font-heading);
     letter-spacing: -0.02em;
+    /* Fraunces reads best a touch softer and more "opinionated" at display sizes. */
+    font-optical-sizing: auto;
+    font-variation-settings: "SOFT" 4, "WONK" 1;
+  }
+
+  /* Global safety net: if a visitor asks for less motion, honour it everywhere, including
+     any transform/animation a component forgets to guard. Individual effects (parallax,
+     magnetic, grain) also check this in JS and simply don't run. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Very fine film grain for the hero, drifting slowly so the frame feels alive, not static.
+   Frozen automatically under prefers-reduced-motion by the safety net above. */
+@layer utilities {
+  .hero-grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+    animation: grain-drift 8s steps(6) infinite;
+  }
+  @keyframes grain-drift {
+    0% { background-position: 0 0; }
+    100% { background-position: 160px 160px; }
   }
 }
 
