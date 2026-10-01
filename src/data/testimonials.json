@@ -9,7 +9,8 @@
     "photo_url": "/media/people/suthan-naganayagam.jpg",
     "department": null,
     "id": "core-suthan",
-    "is_sample": false
+    "is_sample": false,
+    "reports_to": null
   },
   {
     "testimonial_type": "employee",
@@ -21,7 +22,8 @@
     "photo_url": "/media/people/ivie-mirabueno.jpg",
     "department": null,
     "id": "core-ivie",
-    "is_sample": false
+    "is_sample": false,
+    "reports_to": "core-suthan"
   },
   {
     "testimonial_type": "employee",
@@ -33,7 +35,8 @@
     "photo_url": "/media/people/liezel-flor.jpg",
     "department": null,
     "id": "core-liz",
-    "is_sample": false
+    "is_sample": false,
+    "reports_to": "core-suthan"
   },
   {
     "testimonial_type": "employee",
@@ -45,7 +48,8 @@
     "photo_url": "",
     "department": null,
     "id": "core-ian",
-    "is_sample": false
+    "is_sample": false,
+    "reports_to": "core-suthan"
   },
   {
     "testimonial_type": "employee",
@@ -57,7 +61,8 @@
     "photo_url": "/media/people/james.jpg",
     "department": null,
     "id": "core-james",
-    "is_sample": false
+    "is_sample": false,
+    "reports_to": "core-suthan"
   },
   {
     "testimonial_type": "client",

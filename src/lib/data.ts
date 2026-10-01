@@ -16,6 +16,8 @@ export type Testimonial = {
   photo_url: string;
   department?: string | null;
   years_at_company?: number | null;
+  /** Org chart: id of the person this employee reports to (null/absent = top of the chart). */
+  reports_to?: string | null;
   client_company?: string;
   client_title?: string;
   display_order: number;

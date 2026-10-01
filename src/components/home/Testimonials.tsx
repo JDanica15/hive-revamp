@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
+import { OrgChart } from "@/components/home/OrgChart";
 import { SmartImage } from "@/components/SmartImage";
 import type { Testimonial } from "@/lib/data";
 import { DURATION, EASE } from "@/lib/motion";
@@ -69,37 +70,51 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
         )}
       </div>
       <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
-        <div className="lg:col-span-5 grid grid-cols-2 gap-4">
-          {list.map((t, i) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setSelected(i)}
-              aria-pressed={selected === i}
-              aria-label={`Read ${t.employee_name}'s story`}
-              className={
-                "group relative aspect-[3/4] overflow-hidden rounded-sm transition-all duration-300 " +
-                (selected === i ? "ring-2 ring-accent ring-offset-4 ring-offset-background" : "opacity-70 hover:opacity-100")
-              }
-            >
-              <SmartImage
-                src={t.photo_url}
-                alt={t.employee_name}
-                fill
-                sizes="(min-width: 1024px) 20vw, 50vw"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
-                <p className="text-background font-medium text-sm">{t.employee_name}</p>
-                {(tab === "employee" ? t.role : t.client_title || t.role) && (
-                  <p className="text-background/70 text-xs">{tab === "employee" ? t.role : t.client_title || t.role}</p>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-        <div className="lg:col-span-7 flex flex-col justify-center">
+        {tab === "employee" ? (
+          <div className="lg:col-span-7">
+            <OrgChart
+              people={list}
+              selectedId={active.id}
+              onSelect={(id) => setSelected(list.findIndex((t) => t.id === id))}
+            />
+          </div>
+        ) : (
+          <div className="lg:col-span-5 grid grid-cols-2 gap-4">
+            {list.map((t, i) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setSelected(i)}
+                aria-pressed={selected === i}
+                aria-label={`Read ${t.employee_name}'s story`}
+                className={
+                  "group relative aspect-[3/4] overflow-hidden rounded-sm transition-all duration-300 " +
+                  (selected === i ? "ring-2 ring-accent ring-offset-4 ring-offset-background" : "opacity-70 hover:opacity-100")
+                }
+              >
+                <SmartImage
+                  src={t.photo_url}
+                  alt={t.employee_name}
+                  fill
+                  sizes="(min-width: 1024px) 20vw, 50vw"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
+                  <p className="text-background font-medium text-sm">{t.employee_name}</p>
+                  {(t.client_title || t.role) && (
+                    <p className="text-background/70 text-xs">{t.client_title || t.role}</p>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+        <div
+          className={
+            (tab === "employee" ? "lg:col-span-5" : "lg:col-span-7") + " flex flex-col justify-center"
+          }
+        >
           <AnimatePresence mode="wait">
             <motion.figure
               key={`${active.id}-${tab}`}

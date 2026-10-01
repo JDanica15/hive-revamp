@@ -18,6 +18,7 @@ const config: Config = {
         body: "var(--font-body)",
         display: "var(--font-display)",
         mono: "var(--font-mono)",
+        script: "var(--font-script), cursive",
       },
       colors: {
         border: "hsl(var(--border))",

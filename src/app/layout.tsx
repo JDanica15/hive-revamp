@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Caveat, Fraunces, Inter } from "next/font/google";
 import { HashScrollManager } from "@/components/AppLink";
 import { SiteCursor } from "@/components/motion/SiteCursor";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
@@ -14,6 +14,8 @@ const fraunces = Fraunces({
   axes: ["opsz", "SOFT", "WONK"],
 });
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
+// Handwritten name labels on the honeycomb portraits.
+const caveat = Caveat({ subsets: ["latin"], display: "swap", variable: "--font-script" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -68,7 +70,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-AU" className={`${fraunces.variable} ${inter.variable}`}>
+    <html lang="en-AU" className={`${fraunces.variable} ${inter.variable} ${caveat.variable}`}>
       <head>
         {/* Without JavaScript, show content that would otherwise wait for its entrance animation. */}
         <noscript>
