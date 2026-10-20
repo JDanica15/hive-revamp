@@ -1,5 +1,5 @@
 // schema.org structured data for rich results.
-import type { HiveEvent, JobListing } from "@/lib/data";
+import type { JobListing } from "@/lib/data";
 import { CONTACT, LOGO_URL, SERVICES, SITE_DESCRIPTION, SITE_NAME, SITE_URL, SOCIAL, absoluteUrl } from "@/lib/site";
 
 const ORG_ID = `${SITE_URL}/#organization`;
@@ -126,46 +126,6 @@ export function jobListJsonLd(jobs: JobListing[]) {
       position: i + 1,
       url: absoluteUrl(`/careers/${job.id}`),
       name: job.title,
-    })),
-  };
-}
-
-export function eventJsonLd(event: HiveEvent) {
-  const images = [event.cover_photo_url, ...(event.photos ?? [])].map((src) => absoluteUrl(src));
-  return {
-    "@context": "https://schema.org",
-    "@type": "Event",
-    name: event.title,
-    description: event.description,
-    startDate: event.date,
-    endDate: event.date,
-    eventStatus: "https://schema.org/EventScheduled",
-    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-    image: Array.from(new Set(images)),
-    url: absoluteUrl(`/events/${event.id}`),
-    location: {
-      "@type": "Place",
-      name: event.location || "Sydney",
-      address: {
-        "@type": "PostalAddress",
-        addressLocality: event.location || CONTACT.locality,
-        addressCountry: CONTACT.country,
-      },
-    },
-    organizer: { "@type": "Organization", "@id": ORG_ID, name: SITE_NAME, url: SITE_URL },
-  };
-}
-
-export function eventListJsonLd(events: HiveEvent[]) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: "Life at Hive — events",
-    itemListElement: events.map((event, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      url: absoluteUrl(`/events/${event.id}`),
-      name: event.title,
     })),
   };
 }

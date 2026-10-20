@@ -1,23 +1,18 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
-import { Lightbox } from "@/components/events/Lightbox";
-import { ArrowUpRight, ChevronLeft, ChevronRight, Play } from "@/components/icons";
+import { ChevronLeft, ChevronRight, Play } from "@/components/icons";
 import { SmartImage } from "@/components/SmartImage";
 import { VideoModal } from "@/components/VideoModal";
-import { DURATION, EASE } from "@/lib/motion";
-import { MOMENTS, VIDEO_STORIES, type VideoStory } from "@/lib/stories";
+import { VIDEO_STORIES, type VideoStory } from "@/lib/stories";
 
 export function VideoStories() {
   const [playing, setPlaying] = useState<VideoStory | null>(null);
-  const [photoIndex, setPhotoIndex] = useState<number | null>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const closeVideo = useCallback(() => setPlaying(null), []);
-  const closePhoto = useCallback(() => setPhotoIndex(null), []);
 
   // Cinematic entrance: as the strip rises into view it expands from slightly small and its
   // framing radius tightens, like a film settling into frame — one moment, not seven fades.
@@ -170,57 +165,8 @@ export function VideoStories() {
           </button>
         </div>
       </div>
-      <div className="mb-6 flex items-baseline justify-between gap-4">
-        <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground mb-4">Moments at Hive</p>
-        <Link
-          href="/gallery"
-          className="group inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-accent transition-colors"
-        >
-          View gallery
-          <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-        </Link>
-      </div>
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-60px" }}
-        transition={{ duration: DURATION.editorial, ease: EASE.out }}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
-      >
-        {MOMENTS.map((moment, i) => (
-          <button
-            key={moment.src}
-            type="button"
-            onClick={() => setPhotoIndex(i)}
-            aria-label={`View photo: ${moment.caption}`}
-            data-cursor="View"
-            className="relative block aspect-[4/5] w-full rounded-sm overflow-hidden bg-muted group cursor-zoom-in text-left"
-          >
-            <SmartImage
-              src={moment.src}
-              alt={moment.caption}
-              fill
-              sizes="(min-width: 1024px) 280px, 50vw"
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-foreground/80 to-transparent">
-              <p className="text-background/80 text-xs">{moment.caption}</p>
-            </div>
-          </button>
-        ))}
-      </motion.div>
       <AnimatePresence>
         {playing && <VideoModal key={playing.video} story={playing} onClose={closeVideo} />}
-      </AnimatePresence>
-      <AnimatePresence>
-        {photoIndex !== null && (
-          <Lightbox
-            photos={MOMENTS.map((m) => m.src)}
-            initialIndex={photoIndex}
-            title="Moments at Hive"
-            onClose={closePhoto}
-          />
-        )}
       </AnimatePresence>
     </section>
   );
