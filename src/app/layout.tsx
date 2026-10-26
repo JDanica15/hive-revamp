@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Caveat, Fraunces, Inter } from "next/font/google";
 import { HashScrollManager } from "@/components/AppLink";
-import { SiteCursor } from "@/components/motion/SiteCursor";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -86,7 +85,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         {children}
         <HashScrollManager />
-        <SiteCursor />
       </body>
     </html>
   );
