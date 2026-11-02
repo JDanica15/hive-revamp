@@ -1,13 +1,19 @@
 import Image from "next/image";
 
-// Client logos live in public/media/clients/. Update `name` when the real client names are known.
-const CLIENTS = [
-  { name: "Talk", logo: "/media/clients/client-1.png", width: 69, height: 67 },
-  { name: "Community", logo: "/media/clients/client-2.png", width: 66, height: 66 },
-  { name: "Financial Advisors", logo: "/media/clients/client-3.png", width: 120, height: 82 },
-  { name: "Consult", logo: "/media/clients/client-4.png", width: 115, height: 51 },
-  { name: "Dolore", logo: "/media/clients/client-5.png", width: 137, height: 35 },
-  { name: "M", logo: "/media/clients/client-6.png", width: 81, height: 45 },
+// Clients scroll past in a marquee. Those with artwork in public/media/clients/ render as a
+// logo; the rest render as a wordmark until their logo is supplied (add `logo`/`width`/`height`).
+type Client = {
+  name: string;
+  logo?: string;
+  width?: number;
+  height?: number;
+  href?: string;
+};
+
+const CLIENTS: Client[] = [
+  { name: "GPTTU" },
+  { name: "Psych2u" },
+  { name: "NavAir" },
   {
     name: "MGI Entertainment",
     logo: "/media/clients/mgi-entertainment-red.svg",
@@ -16,7 +22,38 @@ const CLIENTS = [
     href: "https://www.mgientertainment.com",
   },
   { name: "Taste of AUS & NZ", logo: "/media/clients/taste-of-aus-nz.png", width: 110, height: 50 },
+  { name: "Nikis" },
+  { name: "Persona Care" },
+  { name: "Emerging" },
+  { name: "Everlab" },
+  { name: "Qantas" },
+  { name: "Amazon" },
 ];
+
+function ClientMark({ client }: { client: Client }) {
+  const mark = client.logo ? (
+    <Image
+      src={client.logo}
+      alt={client.name}
+      width={client.width ?? 110}
+      height={client.height ?? 50}
+      unoptimized={client.logo.endsWith(".svg")}
+      className="max-h-14 w-auto h-auto object-contain opacity-70 grayscale hover:opacity-100 hover:grayscale-0 transition duration-300"
+    />
+  ) : (
+    <span className="font-heading text-xl sm:text-2xl whitespace-nowrap text-foreground/60 hover:text-foreground transition-colors duration-300">
+      {client.name}
+    </span>
+  );
+
+  return client.href ? (
+    <a href={client.href} target="_blank" rel="noopener noreferrer">
+      {mark}
+    </a>
+  ) : (
+    mark
+  );
+}
 
 export function TrustedBy() {
   return (
@@ -25,31 +62,29 @@ export function TrustedBy() {
         <p className="text-center text-xs tracking-[0.25em] uppercase text-muted-foreground mb-10">
           Trusted by teams that demand precision
         </p>
-        <ul className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 items-center gap-x-6 gap-y-8">
-          {CLIENTS.map((client) => {
-            const logo = (
-              <Image
-                src={client.logo}
-                alt={client.name}
-                width={client.width}
-                height={client.height}
-                unoptimized={client.logo.endsWith(".svg")}
-                className="max-h-14 max-w-full w-auto h-auto object-contain opacity-70 grayscale hover:opacity-100 hover:grayscale-0 transition duration-300"
-              />
-            );
-            return (
-              <li key={client.logo} className="flex items-center justify-center h-16">
-                {"href" in client ? (
-                  <a href={client.href} target="_blank" rel="noopener noreferrer">
-                    {logo}
-                  </a>
-                ) : (
-                  logo
-                )}
-              </li>
-            );
-          })}
-        </ul>
+      </div>
+
+      <div className="marquee-viewport marquee-mask overflow-hidden">
+        <div className="marquee-track flex w-max items-center">
+          {/* The list twice: the first copy is the readable one, the duplicate only fills
+              the gap as the track loops, so it is hidden from assistive tech. */}
+          {[0, 1].map((copy) => (
+            <ul
+              key={copy}
+              className="flex items-center shrink-0"
+              aria-hidden={copy === 1 || undefined}
+            >
+              {CLIENTS.map((client) => (
+                <li
+                  key={client.name}
+                  className="flex items-center justify-center h-16 px-8 sm:px-12"
+                >
+                  <ClientMark client={client} />
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
       </div>
     </section>
   );

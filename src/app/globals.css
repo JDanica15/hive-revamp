@@ -124,3 +124,31 @@
     border-width: 0;
   }
 }
+
+/* Client marquee: one track rendered twice, slid left by exactly half its width so the
+   seam never shows. Hovering pauses it; reduced motion stops it at the start instead of
+   leaving it parked halfway through (what the global safety net alone would do). */
+@layer utilities {
+  .marquee-track {
+    animation: marquee-scroll var(--marquee-duration, 45s) linear infinite;
+  }
+  .marquee-viewport:hover .marquee-track,
+  .marquee-viewport:focus-within .marquee-track {
+    animation-play-state: paused;
+  }
+  @keyframes marquee-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track {
+      animation: none !important;
+      transform: none !important;
+    }
+  }
+  /* Soften both edges so logos fade out rather than clipping at the container. */
+  .marquee-mask {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  }
+}
