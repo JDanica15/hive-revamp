@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
-import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useCallback, useState } from "react";
+import { TeamPortrait } from "@/components/home/TeamPortrait";
 import { DURATION, EASE, SPRING_SOFT } from "@/lib/motion";
 import { VIDEO_STORIES } from "@/lib/stories";
 
@@ -56,11 +57,13 @@ function HexMember({
   member,
   hovered,
   onHover,
+  onOpen,
   reduce,
 }: {
   member: Tile;
   hovered: Tile | null;
   onHover: (m: Tile | null) => void;
+  onOpen: (m: Tile) => void;
   reduce: boolean;
 }) {
   const isActive = hovered === member;
@@ -90,45 +93,51 @@ function HexMember({
       transition={SPRING_SOFT}
       onHoverStart={() => onHover(member)}
       onHoverEnd={() => onHover(null)}
-      onFocus={() => onHover(member)}
-      onBlur={() => onHover(null)}
-      tabIndex={0}
-      aria-label={member.role ? `${member.name}, ${member.role}` : member.name}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size portraits */}
-      <img
-        src={member.url}
-        alt=""
-        width={720}
-        height={1280}
-        loading="lazy"
-        decoding="async"
-        className="w-full h-full object-cover"
-        style={{ objectPosition: member.focus ?? "50% 30%" }}
-      />
-      {/* Handwritten first name along the bottom edge, like a signed photo tile. */}
-      {!member.center && (
-        <>
-          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent" aria-hidden />
-          <p
-            className="absolute inset-x-0 bottom-[7%] text-center font-script text-lg sm:text-2xl leading-none text-white drop-shadow"
-            aria-hidden
-          >
-            {firstName}
-          </p>
-        </>
-      )}
-      <motion.div
-        className="absolute inset-0 bg-foreground/70 flex items-center justify-center"
-        style={HEXAGON}
-        animate={{ opacity: isActive ? 1 : 0 }}
-        transition={{ duration: DURATION.micro, ease: EASE.out }}
+      {/* The whole hex is the button: clicking it opens the photo full size. */}
+      <button
+        type="button"
+        onClick={() => onOpen(member)}
+        onFocus={() => onHover(member)}
+        onBlur={() => onHover(null)}
+        className="block w-full h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        aria-label={`View ${member.role ? `${member.name}, ${member.role}` : member.name} larger`}
       >
-        <div className="text-center text-background px-4">
-          <p className="font-heading font-medium text-sm sm:text-base leading-tight">{member.name}</p>
-          {member.role && <p className="text-[11px] sm:text-xs text-background/70 mt-0.5">{member.role}</p>}
-        </div>
-      </motion.div>
+        {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size portraits */}
+        <img
+          src={member.url}
+          alt=""
+          width={720}
+          height={1280}
+          loading="lazy"
+          decoding="async"
+          className="w-full h-full object-cover"
+          style={{ objectPosition: member.focus ?? "50% 30%" }}
+        />
+        {/* Handwritten first name along the bottom edge, like a signed photo tile. */}
+        {!member.center && (
+          <>
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent" aria-hidden />
+            <p
+              className="absolute inset-x-0 bottom-[7%] text-center font-script text-lg sm:text-2xl leading-none text-white drop-shadow"
+              aria-hidden
+            >
+              {firstName}
+            </p>
+          </>
+        )}
+        <motion.div
+          className="absolute inset-0 bg-foreground/70 flex items-center justify-center"
+          style={HEXAGON}
+          animate={{ opacity: isActive ? 1 : 0 }}
+          transition={{ duration: DURATION.micro, ease: EASE.out }}
+        >
+          <div className="text-center text-background px-4">
+            <p className="font-heading font-medium text-sm sm:text-base leading-tight">{member.name}</p>
+            {member.role && <p className="text-[11px] sm:text-xs text-background/70 mt-0.5">{member.role}</p>}
+          </div>
+        </motion.div>
+      </button>
     </motion.li>
   );
 }
@@ -136,6 +145,14 @@ function HexMember({
 export function HiveTeam() {
   const reduce = useReducedMotion() ?? false;
   const [hovered, setHovered] = useState<Tile | null>(null);
+  // Index into TILES of the photo shown full size, or null when the lightbox is closed.
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const step = useCallback(
+    (delta: number) => setOpenIndex((i) => (i === null ? i : (i + delta + TILES.length) % TILES.length)),
+    [],
+  );
+  const close = useCallback(() => setOpenIndex(null), []);
 
   return (
     <section className="py-24 lg:py-32 px-6 sm:px-12 lg:px-24 max-w-7xl mx-auto" aria-labelledby="hive-heading">
@@ -173,12 +190,30 @@ export function HiveTeam() {
           >
             <ul>
               {TILES.map((member) => (
-                <HexMember key={member.name} member={member} hovered={hovered} onHover={setHovered} reduce={reduce} />
+                <HexMember
+                  key={member.name}
+                  member={member}
+                  hovered={hovered}
+                  onHover={setHovered}
+                  onOpen={(m) => setOpenIndex(TILES.indexOf(m))}
+                  reduce={reduce}
+                />
               ))}
             </ul>
           </motion.div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {openIndex !== null && (
+          <TeamPortrait
+            portrait={TILES[openIndex]}
+            onClose={close}
+            onPrev={() => step(-1)}
+            onNext={() => step(1)}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }
