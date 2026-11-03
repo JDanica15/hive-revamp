@@ -7,6 +7,9 @@ import { SmartImage } from "@/components/SmartImage";
 import { VideoModal } from "@/components/VideoModal";
 import { VIDEO_STORIES, type VideoStory } from "@/lib/stories";
 
+// Up to three cards fill the row from tablet width up, so there is nothing to scroll to.
+const FITS_ROW = VIDEO_STORIES.length <= 3;
+
 export function VideoStories() {
   const [playing, setPlaying] = useState<VideoStory | null>(null);
   const rowRef = useRef<HTMLDivElement>(null);
@@ -116,7 +119,7 @@ export function VideoStories() {
             {VIDEO_STORIES.map((story) => (
               <div
                 key={story.video}
-                className="snap-start shrink-0 w-[70%] sm:w-[calc((100%-3rem)/3)] lg:w-[calc((100%-4.5rem)/4)]"
+                className={`snap-start shrink-0 w-[70%] sm:w-[calc((100%-3rem)/3)] ${FITS_ROW ? "" : "lg:w-[calc((100%-4.5rem)/4)]"}`}
               >
                 <button
                   type="button"
@@ -129,41 +132,44 @@ export function VideoStories() {
                     src={story.poster}
                     alt=""
                     fill
-                    sizes="(min-width: 1024px) 280px, (min-width: 640px) 33vw, 70vw"
+                    sizes={FITS_ROW ? "(min-width: 640px) 33vw, 70vw" : "(min-width: 1024px) 280px, (min-width: 640px) 33vw, 70vw"}
                     className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
                   />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-background/80 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                  {/* Play sits in the corner beside the name so it never covers the portrait's face. */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between gap-3 bg-gradient-to-t from-foreground/90 to-transparent">
+                    <div>
+                      <p className="text-background font-medium text-sm">{story.name}</p>
+                      {story.role && <p className="text-background/70 text-xs">{story.role}</p>}
+                    </div>
+                    <div className="shrink-0 w-12 h-12 rounded-full bg-background/80 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
                       <Play className="w-5 h-5 text-foreground ml-0.5" fill="currentColor" />
                     </div>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-foreground/90 to-transparent">
-                    <p className="text-background font-medium text-sm">{story.name}</p>
-                    {story.role && <p className="text-background/70 text-xs">{story.role}</p>}
                   </div>
                 </button>
               </div>
             ))}
           </div>
         </motion.div>
-        <div className="hidden sm:flex justify-end gap-2 mt-4">
-          <button
-            type="button"
-            onClick={() => scrollRow(-1)}
-            aria-label="Previous stories"
-            className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollRow(1)}
-            aria-label="More stories"
-            className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+        {!FITS_ROW && (
+          <div className="hidden sm:flex justify-end gap-2 mt-4">
+            <button
+              type="button"
+              onClick={() => scrollRow(-1)}
+              aria-label="Previous stories"
+              className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollRow(1)}
+              aria-label="More stories"
+              className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
       <AnimatePresence>
         {playing && <VideoModal key={playing.video} story={playing} onClose={closeVideo} />}

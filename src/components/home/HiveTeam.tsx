@@ -4,10 +4,9 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useState } from "react";
 import { TeamPortrait } from "@/components/home/TeamPortrait";
 import { DURATION, EASE, SPRING_SOFT } from "@/lib/motion";
-import { VIDEO_STORIES } from "@/lib/stories";
 
 // A "flower" of seven flat-topped hexes, like a framed photo-tile wall: the team photo in the
-// middle and six of our employees (poster frames from their video stories) around it.
+// middle and our core team (square headshots from public/media/team/) around it.
 // Positions are in honeycomb "cell" units (cx = column, cy = row) so we can measure how close
 // each hex is to the hovered one and let neighbours react by proximity — a physical comb.
 type Tile = { url: string; name: string; role?: string; cx: number; cy: number; focus?: string; center?: boolean };
@@ -22,6 +21,16 @@ const RING = [
   [-1, -0.5],
 ] as const;
 
+// Listed in ring order, alternating white and coloured backdrops so the comb stays balanced.
+const CORE_TEAM: { name: string; slug: string; role?: string; focus?: string }[] = [
+  { name: "Danica", slug: "danica", focus: "50% 0%" },
+  { name: "Ivie Mirabueno", slug: "ivie-mirabueno" },
+  { name: "Jilian Armena", slug: "jilian-armena" },
+  { name: "Ylaiza Balisoro", slug: "ylaiza-balisoro" },
+  { name: "Angela Ortiz", slug: "angela-ortiz" },
+  { name: "Dia Cortez", slug: "dia-cortez" },
+];
+
 const TILES: Tile[] = [
   {
     url: "/media/gallery/hotel-st-elise/01.jpg",
@@ -31,10 +40,11 @@ const TILES: Tile[] = [
     focus: "50% 60%",
     center: true,
   },
-  ...VIDEO_STORIES.slice(0, 6).map((s, i) => ({
-    url: s.poster,
+  ...CORE_TEAM.map((s, i) => ({
+    url: `/media/team/${s.slug}.jpg`,
     name: s.name,
     role: s.role,
+    focus: s.focus,
     cx: RING[i][0],
     cy: RING[i][1],
   })),
@@ -108,15 +118,17 @@ function HexMember({
           src={member.url}
           alt=""
           width={720}
-          height={1280}
+          height={720}
           loading="lazy"
           decoding="async"
           className="w-full h-full object-cover"
-          style={{ objectPosition: member.focus ?? "50% 30%" }}
+          style={{ objectPosition: member.focus ?? "50% 50%" }}
         />
         {/* Handwritten first name along the bottom edge, like a signed photo tile. */}
         {!member.center && (
           <>
+            {/* Faint tint so white studio backdrops still show the hex edge against the page. */}
+            <div className="absolute inset-0 bg-foreground/[0.08]" aria-hidden />
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent" aria-hidden />
             <p
               className="absolute inset-x-0 bottom-[7%] text-center font-script text-lg sm:text-2xl leading-none text-white drop-shadow"

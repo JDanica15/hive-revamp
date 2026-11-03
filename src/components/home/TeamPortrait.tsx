@@ -9,8 +9,8 @@ export type Portrait = { url: string; name: string; role?: string; focus?: strin
 
 /**
  * Full-bleed view of a team member's photo, opened by clicking their hex in the comb.
- * The hex crop is dropped here: the poster frames are shot 9:16, so the portrait is shown
- * upright and as tall as the viewport allows. Arrow keys walk the comb; Escape closes.
+ * The hex crop is dropped here, so the photo is shown whole and as large as the viewport
+ * allows. Arrow keys walk the comb; Escape closes.
  */
 export function TeamPortrait({
   portrait,
@@ -89,7 +89,7 @@ export function TeamPortrait({
         className="flex flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element -- poster frames, sized by the viewport */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- team photos, sized by the viewport */}
         <img
           src={portrait.url}
           alt={portrait.name}

@@ -7,8 +7,7 @@ import { WhyHive } from "@/components/careers/WhyHive";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { JsonLd } from "@/components/JsonLd";
-// Video Stories section hidden — restore by uncommenting this import and <VideoStories /> below.
-// import { VideoStories } from "@/components/VideoStories";
+import { VideoStories } from "@/components/VideoStories";
 import { getOpenJobs, getTestimonials } from "@/lib/data";
 import { breadcrumbJsonLd, jobListJsonLd } from "@/lib/jsonld";
 import { OG_DEFAULTS } from "@/lib/site";
@@ -70,7 +69,7 @@ export default async function CareersPage() {
           </div>
           <JobBoard jobs={jobs} />
         </section>
-        {/* <VideoStories /> */}
+        <VideoStories />
         {story && <EmployeeStory story={story} />}
         <HiringProcess />
       </main>

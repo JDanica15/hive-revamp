@@ -7,8 +7,7 @@ import { HiveTeam } from "@/components/home/HiveTeam";
 import { Services } from "@/components/home/Services";
 import { TrustedBy } from "@/components/home/TrustedBy";
 import { JsonLd } from "@/components/JsonLd";
-// Video Stories section hidden — restore by uncommenting this import and <VideoStories /> below.
-// import { VideoStories } from "@/components/VideoStories";
+import { VideoStories } from "@/components/VideoStories";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/jsonld";
 import { SITE_TITLE } from "@/lib/site";
 
@@ -27,7 +26,7 @@ export default function HomePage() {
         <TrustedBy />
         <HiveTeam />
         <Services />
-        {/* <VideoStories /> */}
+        <VideoStories />
         <Contact />
       </main>
       <Footer />
