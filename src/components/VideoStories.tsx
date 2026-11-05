@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Play } from "@/components/icons";
 import { SmartImage } from "@/components/SmartImage";
 import { VideoModal } from "@/components/VideoModal";
@@ -16,6 +16,20 @@ export function VideoStories() {
   const stripRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const closeVideo = useCallback(() => setPlaying(null), []);
+
+  // Only offer the arrows when the row actually overflows at the current width. The number of
+  // cards that fit changes per breakpoint (e.g. 4 cards all fit at lg), so a static count check
+  // isn't enough — measure the real scroll width and re-check whenever the row resizes.
+  const [overflowing, setOverflowing] = useState(false);
+  useEffect(() => {
+    const row = rowRef.current;
+    if (!row) return;
+    const update = () => setOverflowing(row.scrollWidth - row.clientWidth > 1);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(row);
+    return () => ro.disconnect();
+  }, []);
 
   // Cinematic entrance: as the strip rises into view it expands from slightly small and its
   // framing radius tightens, like a film settling into frame — one moment, not seven fades.
@@ -150,7 +164,7 @@ export function VideoStories() {
             ))}
           </div>
         </motion.div>
-        {!FITS_ROW && (
+        {overflowing && (
           <div className="hidden sm:flex justify-end gap-2 mt-4">
             <button
               type="button"

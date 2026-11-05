@@ -25,9 +25,9 @@
     --input: 40 15% 85%;
     --ring: 33 62% 44%;
     --radius: 0.25rem;
-    --font-heading: var(--font-fraunces), Georgia, serif;
+    --font-heading: var(--font-serif), Georgia, serif;
     --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-    --font-display: var(--font-fraunces), Georgia, serif;
+    --font-display: var(--font-serif), Georgia, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
@@ -65,7 +65,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size: 18px;
-    line-height: 1.6;
+    line-height: 1.7;
   }
 
   h1,
@@ -75,10 +75,10 @@
   h5,
   h6 {
     font-family: var(--font-heading);
-    letter-spacing: -0.02em;
-    /* Fraunces reads best a touch softer and more "opinionated" at display sizes. */
+    /* Lora is an open serif; near-normal tracking and a little extra leading keep headings airy. */
+    letter-spacing: -0.005em;
+    line-height: 1.15;
     font-optical-sizing: auto;
-    font-variation-settings: "SOFT" 4, "WONK" 1;
   }
 
   /* Global safety net: if a visitor asks for less motion, honour it everywhere, including

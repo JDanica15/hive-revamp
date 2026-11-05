@@ -1,16 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Caveat, Fraunces, Inter } from "next/font/google";
+import { Caveat, Inter, Lora } from "next/font/google";
 import { HashScrollManager } from "@/components/AppLink";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 // The type this site was designed around. Loaded here (self-hosted by next/font, no layout shift)
 // and wired to the --font-* CSS variables the theme already references.
-const fraunces = Fraunces({
+// Lora: a calm, open serif for headings — more breathing room than the previous Fraunces.
+const lora = Lora({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-fraunces",
-  axes: ["opsz", "SOFT", "WONK"],
+  variable: "--font-serif",
 });
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
 // Handwritten name labels on the honeycomb portraits.
@@ -69,7 +69,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-AU" className={`${fraunces.variable} ${inter.variable} ${caveat.variable}`}>
+    <html lang="en-AU" className={`${lora.variable} ${inter.variable} ${caveat.variable}`}>
       <head>
         {/* Without JavaScript, show content that would otherwise wait for its entrance animation. */}
         <noscript>
