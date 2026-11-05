@@ -11,9 +11,28 @@ type Client = {
 };
 
 const CLIENTS: Client[] = [
-  { name: "GPTTU" },
-  { name: "Psych2u" },
-  { name: "NavAir" },
+  { name: "GP2U", logo: "/media/clients/gp2u.png", width: 85, height: 34, href: "https://gp2u.com.au" },
+  {
+    name: "Psych2u",
+    logo: "/media/clients/psych2u.png",
+    width: 271,
+    height: 50,
+    href: "https://psych2u.com.au",
+  },
+  {
+    name: "My Emergency Doctor",
+    logo: "/media/clients/myed.svg",
+    width: 152,
+    height: 49,
+    href: "https://www.myemergencydr.com",
+  },
+  {
+    name: "Navair",
+    logo: "/media/clients/navair.png",
+    width: 240,
+    height: 35,
+    href: "https://www.navair.com.au",
+  },
   {
     name: "MGI Entertainment",
     logo: "/media/clients/mgi-entertainment-red.svg",
@@ -22,12 +41,18 @@ const CLIENTS: Client[] = [
     href: "https://www.mgientertainment.com",
   },
   { name: "Taste of AUS & NZ", logo: "/media/clients/taste-of-aus-nz.png", width: 110, height: 50 },
-  { name: "Nikis" },
+  { name: "Nikis", logo: "/media/clients/nikis_logo.avif", width: 43, height: 56 },
   { name: "Persona Care" },
   { name: "Emerging" },
-  { name: "Everlab" },
-  { name: "Qantas" },
-  { name: "Amazon" },
+  {
+    name: "Everlab",
+    logo: "/media/clients/everlab.svg",
+    width: 167,
+    height: 33,
+    href: "https://www.everlab.com.au",
+  },
+  { name: "Qantas", logo: "/media/clients/qantas.svg", width: 48, height: 48 },
+  { name: "Amazon", logo: "/media/clients/amazon.svg", width: 302, height: 91 },
 ];
 
 function ClientMark({ client }: { client: Client }) {

@@ -19,12 +19,13 @@ const story = (name: string, slug: string, poster = `/media/stories/${slug}.jpg`
 
 /** Portrait (phone) videos shown in the scrolling row. */
 export const VIDEO_STORIES: VideoStory[] = [
-  story("Jiliane", "jiliane-armena", "/media/team/jilian-armena-portrait.jpg"),
-  story("Ylaizza", "ylaizza-balisoro", "/media/team/ylaiza-balisoro-portrait.jpg"),
-  story("Angelica", "angelica-ortiz", "/media/team/angela-ortiz-portrait.jpg"),
+  story("Jiliane", "jiliane", "/media/team/jilian-portrait.jpg"),
+  story("Ylaizza", "ylaizza", "/media/team/ylaiza-portrait.jpg"),
+  story("Angelica", "angelica", "/media/team/angela-portrait.jpg"),
+  // White-background headshot used as the poster.
+  story("Jayrrah", "jayrrah", "/media/team/jayrrah.png"),
   // Hidden for now — restore by uncommenting.
-  // story("May Ann", "may-ann-basallote"),
-  // story("JB", "jb-lozada"),
-  // story("Natalie", "natalie-marantal"),
-  // story("Jayrrah", "jayrrah-presente"),
+  // story("May Ann", "may-ann"),
+  // story("JB", "jb"),
+  // story("Natalie", "natalie"),
 ];

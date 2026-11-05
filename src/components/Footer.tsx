@@ -79,9 +79,6 @@ export function Footer() {
             <AppLink href="/#contact" className="hover:text-background">
               Terms
             </AppLink>
-            <a href="/admin" rel="nofollow" className="hover:text-background">
-              Admin
-            </a>
           </div>
         </div>
       </div>

@@ -5,13 +5,13 @@ import { useCallback, useState } from "react";
 import { TeamPortrait } from "@/components/home/TeamPortrait";
 import { DURATION, EASE, SPRING_SOFT } from "@/lib/motion";
 
-// A "flower" of seven flat-topped hexes, like a framed photo-tile wall: the team photo in the
+// A diamond of nine flat-topped hexes, like a framed photo-tile wall: the team photo in the
 // middle and our core team (square headshots from public/media/team/) around it.
 // Positions are in honeycomb "cell" units (cx = column, cy = row) so we can measure how close
 // each hex is to the hovered one and let neighbours react by proximity — a physical comb.
 type Tile = { url: string; name: string; role?: string; cx: number; cy: number; focus?: string; center?: boolean };
 
-// Clockwise from the top, around the centre.
+// Clockwise from the top, around the centre, then the left and right tips of the diamond.
 const RING = [
   [0, -1],
   [1, -0.5],
@@ -19,16 +19,21 @@ const RING = [
   [0, 1],
   [-1, 0.5],
   [-1, -0.5],
+  [-2, 0],
+  [2, 0],
 ] as const;
 
 // Listed in ring order, alternating white and coloured backdrops so the comb stays balanced.
-const CORE_TEAM: { name: string; slug: string; role?: string; focus?: string }[] = [
+// `ext` overrides the default .jpg (e.g. white-background PNG headshots).
+const CORE_TEAM: { name: string; slug: string; role?: string; focus?: string; ext?: string }[] = [
   { name: "Danica", slug: "danica", focus: "50% 0%" },
-  { name: "Ivie Mirabueno", slug: "ivie-mirabueno" },
-  { name: "Jilian Armena", slug: "jilian-armena" },
-  { name: "Ylaiza Balisoro", slug: "ylaiza-balisoro" },
-  { name: "Angela Ortiz", slug: "angela-ortiz" },
-  { name: "Dia Cortez", slug: "dia-cortez" },
+  { name: "Ivie", slug: "ivie" },
+  { name: "Jilian", slug: "jilian" },
+  { name: "Ylaiza", slug: "ylaiza" },
+  { name: "Angela", slug: "angela" },
+  { name: "Dia", slug: "dia" },
+  { name: "Liezel", slug: "liezel", ext: "png" },
+  { name: "Jayrrah", slug: "jayrrah", ext: "png" },
 ];
 
 const TILES: Tile[] = [
@@ -41,7 +46,7 @@ const TILES: Tile[] = [
     center: true,
   },
   ...CORE_TEAM.map((s, i) => ({
-    url: `/media/team/${s.slug}.jpg`,
+    url: `/media/team/${s.slug}.${s.ext ?? "jpg"}`,
     name: s.name,
     role: s.role,
     focus: s.focus,
@@ -56,7 +61,7 @@ const HEX_H = Math.sqrt(3) / 2;
 const GAP = 0.05;
 const COL_STEP = 0.75 + GAP * HEX_H;
 const ROW_STEP = HEX_H + GAP;
-const BOX_W = 1 + 2 * COL_STEP;
+const BOX_W = 1 + 4 * COL_STEP;
 const BOX_H = HEX_H + 2 * ROW_STEP;
 const pct = (n: number) => `${(n * 100).toFixed(3)}%`;
 
@@ -95,7 +100,7 @@ function HexMember({
         ...HEXAGON,
         width: pct(1 / BOX_W),
         height: pct(HEX_H / BOX_H),
-        left: pct(((member.cx + 1) * COL_STEP) / BOX_W),
+        left: pct(((member.cx + 2) * COL_STEP) / BOX_W),
         top: pct(((member.cy + 1) * ROW_STEP) / BOX_H),
         zIndex: isActive ? 20 : Math.round(proximity * 10),
       }}
@@ -197,7 +202,7 @@ export function HiveTeam() {
             viewport={{ once: true }}
             transition={{ duration: DURATION.cinematic, ease: EASE.cinematic }}
             onHoverEnd={() => setHovered(null)}
-            className="relative w-full max-w-[520px] mx-auto"
+            className="relative w-full max-w-[680px] mx-auto"
             style={{ aspectRatio: `${BOX_W} / ${BOX_H}` }}
           >
             <ul>
