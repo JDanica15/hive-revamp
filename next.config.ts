@@ -15,8 +15,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/index.html", destination: "/", permanent: true },
       { source: "/careers/index.html", destination: "/careers", permanent: true },
-      { source: "/events/index.html", destination: "/events", permanent: true },
-      { source: "/events/:id/index.html", destination: "/events/:id", permanent: true },
+      // The old events pages are now the gallery.
+      { source: "/events", destination: "/gallery", permanent: true },
+      { source: "/events/:path*", destination: "/gallery", permanent: true },
     ];
   },
   async headers() {

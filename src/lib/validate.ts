@@ -146,3 +146,42 @@ export function validateInquiry(f: InquiryFields): FieldErrors<keyof InquiryFiel
     message: textError(f.message, { label: "a message", min: INQUIRY_LIMITS.messageMin, max: INQUIRY_LIMITS.messageMax }),
   });
 }
+
+// Live chat -----------------------------------------------------------------------
+
+export const CHAT_LIMITS = { name: 100, email: 254, messageMax: 1000, pageMax: 200 };
+
+export type ChatStartFields = { name: string; email: string; message: string };
+
+export function cleanChatStart(input: Record<string, unknown>): ChatStartFields {
+  return {
+    name: clean(input.name, CHAT_LIMITS.name + 1),
+    email: clean(input.email, CHAT_LIMITS.email + 1).toLowerCase(),
+    message: cleanChatMessage(input.message),
+  };
+}
+
+export function cleanChatMessage(value: unknown) {
+  return clean(value, CHAT_LIMITS.messageMax + 1, { multiline: true });
+}
+
+export function chatMessageError(value: string) {
+  if (!value) return "Please type a message.";
+  if (value.length > CHAT_LIMITS.messageMax) return `Please keep messages under ${CHAT_LIMITS.messageMax} characters.`;
+  return undefined;
+}
+
+/** Name is required; email is optional (for follow-up) but must be valid when given. */
+export function validateChatStart(f: ChatStartFields): FieldErrors<keyof ChatStartFields> {
+  return compact({
+    name: nameError(f.name, "your name"),
+    email: f.email ? emailError(f.email) : undefined,
+    message: chatMessageError(f.message),
+  });
+}
+
+/** Keeps only a same-site path from a client-supplied page URL ("/careers"), never a full URL. */
+export function cleanPagePath(value: unknown) {
+  const text = clean(value, CHAT_LIMITS.pageMax);
+  return text.startsWith("/") && !text.startsWith("//") ? text : "";
+}

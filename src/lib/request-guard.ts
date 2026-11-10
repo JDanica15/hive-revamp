@@ -34,9 +34,12 @@ export function isTooLarge(request: Request, max: number) {
  */
 export async function clientId() {
   const h = await headers();
-  const ip = h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  // With no IP header (not on Vercel, or a stripped proxy) don't put everyone in one shared bucket:
+  // fall back to the browser fingerprint headers, which at least separates most visitors.
+  const who = ip || `noip:${h.get("user-agent") ?? ""}:${h.get("accept-language") ?? ""}`;
   return createHash("sha256")
-    .update(`${ip}|${SUPABASE_SECRET_KEY ?? "hive"}`)
+    .update(`${who}|${SUPABASE_SECRET_KEY ?? "hive"}`)
     .digest("hex")
     .slice(0, 32);
 }
@@ -47,17 +50,32 @@ export const LIMITS = {
   login: { max: 8, windowSeconds: 15 * 60 },
   loginEmail: { max: 10, windowSeconds: 60 * 60 },
   passwordReset: { max: 3, windowSeconds: 60 * 60 },
+  // Live chat: starting conversations is capped per visitor and across the whole site (so a botnet
+  // with rotating IPs still can't flood the inbox); messages are capped per visitor and per chat.
+  chatStart: { max: 3, windowSeconds: 60 * 60 },
+  chatStartGlobal: { max: 60, windowSeconds: 60 * 60 },
+  chatMessage: { max: 40, windowSeconds: 10 * 60 },
+  chatConversation: { max: 25, windowSeconds: 10 * 60 },
 } as const;
 
 /**
  * Counts recent attempts for `action` + `key` and records this one. Returns false when the limit
- * is reached. Stored in the rate_limits table so it holds across serverless instances. If the
+ * is reached. Stored in the rate_limits table so it holds across serverless instances. Uses the
+ * atomic check_rate_limit() SQL function (migration 003) so parallel requests can't all slip under
+ * the limit; falls back to a plain count-then-insert if the function isn't installed yet. If the
  * table is unavailable it allows the request (and logs), rather than taking the forms down.
  */
 export async function withinRateLimit(action: keyof typeof LIMITS, key: string) {
   if (!isSupabaseConfigured) return true;
   const { max, windowSeconds } = LIMITS[action];
   const bucket = `${action}:${key}`;
+  const atomic = await db().rpc("check_rate_limit", { p_bucket: bucket, p_max: max, p_window_seconds: windowSeconds });
+  if (!atomic.error && typeof atomic.data === "boolean") {
+    if (atomic.data && Math.random() < 0.02) {
+      await db().from("rate_limits").delete().lt("created_at", new Date(Date.now() - 86_400_000).toISOString());
+    }
+    return atomic.data;
+  }
   try {
     const since = new Date(Date.now() - windowSeconds * 1000).toISOString();
     const { count, error } = await db()

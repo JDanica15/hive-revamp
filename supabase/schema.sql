@@ -103,3 +103,5 @@ values (
   array['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
 )
 on conflict (id) do nothing;
+
+-- Live chat + atomic rate limiting: see migrations/003_chat.sql (paste its contents here for new projects).

@@ -340,3 +340,5 @@ export const CircleAlert = icon(
     <line x1="12" x2="12.01" y1="16" y2="16" />
   </>,
 );
+
+export const MessageCircle = icon("message-circle", <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />);

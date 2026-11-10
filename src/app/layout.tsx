@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Caveat, Inter, Lora } from "next/font/google";
 import { HashScrollManager } from "@/components/AppLink";
+import { ChatLauncher } from "@/components/chat/ChatLauncher";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -85,6 +86,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         {children}
         <HashScrollManager />
+        <ChatLauncher />
       </body>
     </html>
   );
