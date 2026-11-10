@@ -9,10 +9,14 @@ import { CHAT_LIMITS, cleanChatStart, validateChatStart, type FieldErrors, type 
 import { DURATION, EASE } from "@/lib/motion";
 
 type Message = { id: string; sender: "visitor" | "staff"; body: string; created_date: string };
-type Session = { id: string; token: string };
+type Session = { id: string; token: string; started: number };
 type Status = { enabled: boolean; online: boolean; gate?: string; realtime?: { url: string; key: string } | null };
 
 const STORAGE_KEY = "hive-chat-v1";
+// A visitor's chat is forgotten 24 hours after it started, so they begin afresh (the server enforces
+// the same limit on the token; staff still keep the conversation).
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+const isFresh = (s: Session) => typeof s.started === "number" && Date.now() - s.started < SESSION_TTL_MS;
 const POLL_MS = 20_000; // safety net in case a live push is missed
 const FIELD =
   "w-full bg-background border border-border rounded-sm px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none transition-colors";
@@ -22,7 +26,12 @@ const timeFormat = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute:
 function loadSession(): Session | null {
   try {
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-    return raw && typeof raw.id === "string" && typeof raw.token === "string" ? raw : null;
+    const session: Session | null = raw && typeof raw.id === "string" && typeof raw.token === "string" ? raw : null;
+    if (session && !isFresh(session)) {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+    return session;
   } catch {
     return null;
   }
@@ -146,10 +155,12 @@ export function ChatWidget() {
     });
   }, [loadHistory, loadStatus]);
 
-  // Live replies: a Realtime Broadcast channel named after the conversation's random id.
+  // Live updates over Supabase Realtime Broadcast: replies on a channel named after the
+  // conversation's random id, and staff coming online/offline on a shared presence channel.
   const realtime = status?.realtime;
+  const sessionId = session?.id;
   useEffect(() => {
-    if (!session || !realtime) return;
+    if (!realtime || (!open && !session)) return;
     let cancelled = false;
     let cleanup: (() => void) | undefined;
     import("@supabase/supabase-js").then(({ createClient }) => {
@@ -157,18 +168,46 @@ export function ChatWidget() {
       const client = createClient(realtime.url, realtime.key, {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       });
-      client
-        .channel(`chat:${session.id}`)
-        .on("broadcast", { event: "message" }, ({ payload }) => addMessages([payload as Message]))
-        // Catch up on anything sent while we were connecting or disconnected.
-        .subscribe((state) => state === "SUBSCRIBED" && loadHistory(session));
+      if (open) {
+        client
+          .channel("chat-presence")
+          .on("broadcast", { event: "presence" }, ({ payload }) =>
+            setStatus((s) => (s ? { ...s, online: Boolean(payload?.online) } : s)),
+          )
+          .subscribe();
+      }
+      if (session) {
+        client
+          .channel(`chat:${session.id}`)
+          .on("broadcast", { event: "message" }, ({ payload }) => addMessages([payload as Message]))
+          // Catch up on anything sent while we were connecting or disconnected.
+          .subscribe((state) => state === "SUBSCRIBED" && loadHistory(session));
+      }
       cleanup = () => void client.removeAllChannels();
     });
     return () => {
       cancelled = true;
       cleanup?.();
     };
-  }, [session, realtime, addMessages, loadHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the session id, not the object
+  }, [open, sessionId, realtime, addMessages, loadHistory]);
+
+  // Backup for the push above (it can't announce staff timing out): re-check availability while open.
+  useEffect(() => {
+    if (!open) return;
+    const check = async () => {
+      if (document.visibilityState !== "visible") return;
+      const fresh = await loadStatus(true);
+      // Keep the original gate token: replacing it would reset its age and block starting a chat.
+      setStatus((s) => (s ? { ...s, enabled: fresh.enabled, online: fresh.online } : fresh));
+    };
+    const timer = window.setInterval(check, 10_000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [open, loadStatus]);
 
   // Safety net while the window is open: refresh when the tab regains focus and every so often.
   useEffect(() => {
@@ -181,6 +220,19 @@ export function ChatWidget() {
       document.removeEventListener("visibilitychange", refresh);
     };
   }, [open, session, loadHistory]);
+
+  // A chat left open past its 24 hours starts afresh too.
+  useEffect(() => {
+    if (!session) return;
+    const left = session.started + SESSION_TTL_MS - Date.now();
+    const timer = window.setTimeout(() => {
+      saveSession(null);
+      setSession(null);
+      setMessages([]);
+      setClosed(false);
+    }, Math.max(left, 0));
+    return () => window.clearTimeout(timer);
+  }, [session]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: reduce ? "auto" : "smooth" });
@@ -257,7 +309,7 @@ export function ChatWidget() {
       if (!res.ok) return await handleApiError(res);
       const data = await res.json();
       if (!data.token) return;
-      const next: Session = { id: data.conversationId, token: data.token };
+      const next: Session = { id: data.conversationId, token: data.token, started: Date.now() };
       restoring.current = false;
       saveSession(next);
       setSession(next);

@@ -1,7 +1,7 @@
 "use server";
 
 import { requireAdmin } from "@/lib/admin";
-import { broadcastToVisitor, type ChatMessage } from "@/lib/chat";
+import { broadcastPresence, broadcastToVisitor, staffOnline, type ChatMessage } from "@/lib/chat";
 import { db } from "@/lib/supabase";
 import { chatMessageError, cleanChatMessage } from "@/lib/validate";
 
@@ -24,6 +24,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Marks staff as available and "seen just now". The inbox page calls this every ~30 seconds. */
 export async function chatHeartbeat() {
   await requireAdmin();
+  const wasOnline = await staffOnline();
   const { data, error } = await db()
     .from("chat_presence")
     .update({ last_seen: new Date().toISOString() })
@@ -31,6 +32,8 @@ export async function chatHeartbeat() {
     .select("available")
     .single();
   if (error) throw new Error(error.message);
+  // Open chat windows learn about it instantly when staff come online.
+  if (!wasOnline && data.available) await broadcastPresence(true);
   return { available: data.available as boolean };
 }
 
@@ -39,6 +42,7 @@ export async function setChatAvailable(available: boolean) {
   const patch = available ? { available: true, last_seen: new Date().toISOString() } : { available: false };
   const { error } = await db().from("chat_presence").update(patch).eq("id", 1);
   if (error) throw new Error(error.message);
+  await broadcastPresence(available);
   return available;
 }
 

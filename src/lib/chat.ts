@@ -13,8 +13,8 @@ export const CHAT_ENABLED = isSupabaseConfigured;
 
 /** Staff count as online if the admin chat page has pinged within this many seconds. */
 const ONLINE_WINDOW_MS = 90_000;
-/** A visitor's chat link stays valid for 7 days. */
-const CONVERSATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/** A visitor's chat stays reachable for 24 hours from when it started; after that they begin afresh. */
+export const CONVERSATION_TTL_MS = 24 * 60 * 60 * 1000;
 /** The widget's "gate" token must be at least this old before a chat can start (bots fire instantly). */
 export const GATE_MIN_AGE_MS = 2_000;
 export const GATE_MAX_AGE_MS = 60 * 60 * 1000;
@@ -81,6 +81,19 @@ export async function broadcastToVisitor(conversationId: string, message: ChatMe
     await channel.httpSend("message", message, { timeout: 4000 });
   } catch (err) {
     console.error("Chat broadcast failed:", err);
+  } finally {
+    await client.removeChannel(channel);
+  }
+}
+
+/** Tells every open chat window that staff just came online or went away, without waiting for its next check. */
+export async function broadcastPresence(online: boolean) {
+  const client = db();
+  const channel = client.channel("chat-presence");
+  try {
+    await channel.httpSend("presence", { online }, { timeout: 4000 });
+  } catch (err) {
+    console.error("Presence broadcast failed:", err);
   } finally {
     await client.removeChannel(channel);
   }
