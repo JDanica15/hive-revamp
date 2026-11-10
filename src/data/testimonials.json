@@ -27,19 +27,6 @@
   },
   {
     "testimonial_type": "employee",
-    "role": "Head of Finance and Operations",
-    "quote": "",
-    "years_at_company": 3,
-    "display_order": 3,
-    "employee_name": "Liezel",
-    "photo_url": "/media/people/liezel.jpg",
-    "department": null,
-    "id": "core-liz",
-    "is_sample": false,
-    "reports_to": "core-suthan"
-  },
-  {
-    "testimonial_type": "employee",
     "role": "Business Development Officer",
     "quote": "",
     "years_at_company": null,
