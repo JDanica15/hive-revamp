@@ -26,7 +26,7 @@
     --ring: 33 62% 44%;
     --radius: 0.25rem;
     --font-heading: var(--font-serif), Georgia, serif;
-    --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    --font-body: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
     --font-display: var(--font-serif), Georgia, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
@@ -151,4 +151,49 @@
     -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
     mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
   }
+}
+
+/* The Hive team globe (HiveTeam.tsx), ported from the Base44 prototype. */
+.hive-globe-frame { width: 100%; position: relative; }
+.hive-scene {
+  --hive-accent: #d78b45; --hive-ink: #26303c; --hive-muted: #4c5663; --hive-paper: #f9f7f2; --hive-sand: #e7e0d3;
+  aspect-ratio: 1; width: 100%; max-width: 33rem; margin-inline: auto; position: relative; overflow: hidden;
+  cursor: grab; touch-action: pan-y; -webkit-tap-highlight-color: transparent; user-select: none; outline: none;
+}
+.hive-scene:active { cursor: grabbing; }
+.hive-scene:focus-visible { outline: 2px solid var(--hive-accent); outline-offset: 8px; border-radius: 50%; }
+.hive-glow {
+  position: absolute; inset: 4%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 50% 46%, #d78b4529, #d78b450f 46%, #0000 68%);
+}
+.hive-node { position: absolute; top: 50%; left: 50%; width: var(--hive-card, 88px); transform: translate(-50%, -50%); /* no will-change/3D here: it makes Chrome rasterise once and stretch the bitmap, which blurs the photos */ }
+.hive-node-inner {
+  position: relative; display: flex; flex-direction: column; align-items: center; transform-origin: 50%;
+  transition: transform .34s cubic-bezier(.22,.61,.36,1), filter .34s;
+}
+.hive-node:hover .hive-node-inner { filter: drop-shadow(0 14px 20px #d78b4566); transform: scale(1.15); }
+.hive-hex {
+  position: relative; overflow: hidden; width: var(--hive-card, 88px); aspect-ratio: 1 / 1.11; background: var(--hive-sand);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); transition: background-color .3s;
+}
+.hive-node:hover .hive-hex { background: var(--hive-accent); }
+.hive-hex img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-drag: none; }
+.hive-scrim { position: absolute; inset: 0; opacity: 0; pointer-events: none; background: #1c2530; }
+/* (the Base44 gloss overlay on .hive-hex was removed: it washed out pale photos) */
+.hive-name {
+  margin-top: .5rem; line-height: 1.1; white-space: nowrap; letter-spacing: .01em; color: var(--hive-ink);
+  font-family: var(--font-display); font-size: clamp(11px, calc(var(--hive-card, 88px) * .165), 15px);
+  opacity: clamp(0, calc((var(--front, 1) - .4) * 3), 1); /* names on the back half fade out */
+}
+.hive-role {
+  position: absolute; top: 100%; left: 50%; margin-top: .3rem; padding: .2rem .5rem; border-radius: 999px;
+  border: 1px solid var(--hive-sand); background: var(--hive-paper); color: var(--hive-ink);
+  font-size: .56rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+  opacity: 0; pointer-events: none; transform: translate(-50%, 4px); transition: opacity .3s, transform .3s;
+}
+.hive-node:hover .hive-role { opacity: 1; transform: translate(-50%, 0); }
+.hive-hint { margin-top: .4rem; text-align: center; font-size: .62rem; letter-spacing: .28em; text-transform: uppercase; color: #4c5663; opacity: .65; }
+@media (prefers-reduced-motion: reduce) {
+  .hive-node-inner, .hive-role { transition-duration: .01ms; }
+  .hive-hint { display: none; }
 }

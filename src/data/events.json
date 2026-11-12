@@ -1,0 +1,128 @@
+[
+  {
+    "date": "2025-12-14",
+    "cover_photo_url": "/media/photo-1670899460364-ebc917bac09a-ylvrhf.jpg",
+    "description": "Our year-end black-tie gala brought the entire Hive family together for an unforgettable evening of fine dining, awards, and celebration. A night to recognise the people who made the year extraordinary.",
+    "location": "The Star, Sydney",
+    "title": "Annual Gala Dinner 2025",
+    "category": "Dinner",
+    "photos": [
+      "/media/photo-1670899460364-ebc917bac09a-1jczgx3.jpg",
+      "/media/photo-1581954548122-4dff8989c0f7-1ypmerk.jpg",
+      "/media/photo-1651313949559-d1cd72300a19-zfdpzx.jpg",
+      "/media/photo-1699730164892-d7c433524ff3-8fi1qw.jpg",
+      "/media/photo-1485872299829-c673f5194813-5d8mwv.jpg",
+      "/media/photo-1517457373958-b7bdd4587205-wtqz5i.jpg"
+    ],
+    "id": "6ab32e0221a684ec1af13586",
+    "created_date": "2026-09-23T01:40:18.626000",
+    "updated_date": "2026-09-23T01:40:18.626000",
+    "created_by_id": "6ab07b8e7821790aceede342",
+    "is_sample": false
+  },
+  {
+    "date": "2025-09-25",
+    "cover_photo_url": "/media/photo-1581954548122-4dff8989c0f7-kfm284.jpg",
+    "description": "An intimate evening to thank the partners who trust us with their operations. Waterside cocktails, a curated tasting menu, and conversations that went far beyond business.",
+    "location": "Opera House, Sydney",
+    "title": "Client Appreciation Night",
+    "category": "Dinner",
+    "photos": [
+      "/media/photo-1581954548122-4dff8989c0f7-1ypmerk.jpg",
+      "/media/photo-1651313949559-d1cd72300a19-zfdpzx.jpg",
+      "/media/photo-1699730164892-d7c433524ff3-8fi1qw.jpg",
+      "/media/photo-1485872299829-c673f5194813-5d8mwv.jpg",
+      "/media/photo-1515169067868-5387ec356754-1f07mjj.jpg",
+      "/media/photo-1670899460364-ebc917bac09a-1jczgx3.jpg"
+    ],
+    "id": "6ab32e0221a684ec1af13589",
+    "created_date": "2026-09-23T01:40:18.626000",
+    "updated_date": "2026-09-23T01:40:18.626000",
+    "created_by_id": "6ab07b8e7821790aceede342",
+    "is_sample": false
+  },
+  {
+    "date": "2025-08-08",
+    "cover_photo_url": "/media/photo-1542744173-8e7e53415bb0-hrg2o2.jpg",
+    "description": "Sun, sand, and a little friendly competition. Our beach day combined team challenges, a BBQ lunch, and plenty of time to just enjoy each other's company outside the office walls.",
+    "location": "Manly Beach, Sydney",
+    "title": "Team Building Day",
+    "category": "Activity",
+    "photos": [
+      "/media/photo-1542744173-8e7e53415bb0-12ijs3q.jpg",
+      "/media/photo-1523240795612-9a054b0db644-buocu1.jpg",
+      "/media/photo-1521737711867-e3b97375f902-j2qzer.jpg",
+      "https://images.unsplash.com/photo-1500648766831-d4f8f66f6e3e?w=1200&q=80&auto=format",
+      "/media/photo-1472099645785-5658abf4ff4e-sbibq4.jpg",
+      "/media/photo-1544005313-94ddf0286df2-8mz4bc.jpg"
+    ],
+    "id": "6ab32e0221a684ec1af1358b",
+    "created_date": "2026-09-23T01:40:18.626000",
+    "updated_date": "2026-09-23T01:40:18.626000",
+    "created_by_id": "6ab07b8e7821790aceede342",
+    "is_sample": false
+  },
+  {
+    "date": "2025-06-20",
+    "cover_photo_url": "/media/photo-1523240795612-9a054b0db644-wls29p.jpg",
+    "description": "Three days away from the office to reconnect, strategise, and recharge. Workshops in the morning, bushwalks in the afternoon, and campfire conversations that lasted well into the night.",
+    "location": "Blue Mountains, NSW",
+    "title": "Mid-Year Team Retreat",
+    "category": "Company Gathering",
+    "photos": [
+      "/media/photo-1523240795612-9a054b0db644-buocu1.jpg",
+      "/media/photo-1542744173-8e7e53415bb0-12ijs3q.jpg",
+      "/media/photo-1521737711867-e3b97375f902-j2qzer.jpg",
+      "/media/photo-1494790108377-be9c29b29330-12k39i4.jpg",
+      "https://images.unsplash.com/photo-1507003211169-0b1dd7c53394?w=1200&q=80&auto=format",
+      "/media/photo-1438761681033-6461ffad8d80-4x65xm.jpg"
+    ],
+    "id": "6ab32e0221a684ec1af13587",
+    "created_date": "2026-09-23T01:40:18.626000",
+    "updated_date": "2026-09-23T01:40:18.626000",
+    "created_by_id": "6ab07b8e7821790aceede342",
+    "is_sample": false
+  },
+  {
+    "date": "2025-03-15",
+    "cover_photo_url": "/media/photo-1517457373958-b7bdd4587205-c2n9pu.jpg",
+    "description": "Five years of Hive! We transformed the office into a party venue with live music, a photo wall, and a toast to every person who helped build what we have today.",
+    "location": "Hive HQ, Sydney",
+    "title": "Office Anniversary Party",
+    "category": "Party",
+    "photos": [
+      "/media/photo-1517457373958-b7bdd4587205-wtqz5i.jpg",
+      "/media/photo-1645730826845-cd2ddec9984f-n0zmgx.jpg",
+      "/media/photo-1713450605268-5f8ba67f5b55-1zvdm5.jpg",
+      "/media/photo-1758691737487-29b4fae83e95-h5khqn.jpg",
+      "/media/photo-1530103862676-de8c9debad1d-cuzqtd.jpg",
+      "/media/photo-1699730185428-d11054059c7f-ra1det.jpg"
+    ],
+    "id": "6ab32e0221a684ec1af1358a",
+    "created_date": "2026-09-23T01:40:18.626000",
+    "updated_date": "2026-09-23T01:40:18.626000",
+    "created_by_id": "6ab07b8e7821790aceede342",
+    "is_sample": false
+  },
+  {
+    "date": "2024-12-19",
+    "cover_photo_url": "/media/photo-1699730185428-d11054059c7f-6ixnz5.jpg",
+    "description": "Twinkling lights, secret Santa, and a dance floor that never emptied. Our annual holiday party is where work mode switches off and the people behind the titles shine.",
+    "location": "Hive HQ, Sydney",
+    "title": "Holiday Celebration 2024",
+    "category": "Celebration",
+    "photos": [
+      "/media/photo-1699730185428-d11054059c7f-ra1det.jpg",
+      "/media/photo-1530103862676-de8c9debad1d-cuzqtd.jpg",
+      "/media/photo-1517457373958-b7bdd4587205-wtqz5i.jpg",
+      "/media/photo-1645730826845-cd2ddec9984f-n0zmgx.jpg",
+      "/media/photo-1713450605268-5f8ba67f5b55-1zvdm5.jpg",
+      "/media/photo-1758691737487-29b4fae83e95-h5khqn.jpg"
+    ],
+    "id": "6ab32e0221a684ec1af13588",
+    "created_date": "2026-09-23T01:40:18.626000",
+    "updated_date": "2026-09-23T01:40:18.626000",
+    "created_by_id": "6ab07b8e7821790aceede342",
+    "is_sample": false
+  }
+]

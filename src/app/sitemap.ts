@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
-import { getOpenJobs } from "@/lib/data";
+import { getEvents, getOpenJobs } from "@/lib/data";
 import { absoluteUrl } from "@/lib/site";
 
 export const revalidate = 300;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const events = getEvents();
   const jobs = await getOpenJobs();
   const latest = (dates: (string | undefined)[]) =>
     dates.filter(Boolean).sort().at(-1)?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
@@ -23,6 +24,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: (job.updated_date ?? job.posted_date).slice(0, 10),
       changeFrequency: "weekly" as const,
       priority: 0.8,
+    })),
+    {
+      url: absoluteUrl("/our-events"),
+      lastModified: latest(events.map((e) => e.updated_date ?? e.date)),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    ...events.map((event) => ({
+      url: absoluteUrl(`/our-events/${event.id}`),
+      lastModified: (event.updated_date ?? event.date).slice(0, 10),
+      changeFrequency: "yearly" as const,
+      priority: 0.6,
+      images: [event.cover_photo_url, ...(event.photos ?? [])]
+        .filter((src, i, all) => all.indexOf(src) === i)
+        .map((src) => absoluteUrl(src)),
     })),
   ];
 }

@@ -3,6 +3,7 @@
 // from the JSON file here; edit it to update the site.
 import "server-only";
 import { db, isSupabaseConfigured } from "@/lib/supabase";
+import eventsJson from "@/data/events.json";
 import jobsJson from "@/data/jobs.json";
 import testimonialsJson from "@/data/testimonials.json";
 
@@ -22,6 +23,18 @@ export type Testimonial = {
   display_order: number;
 };
 
+export type HiveEvent = {
+  id: string;
+  title: string;
+  date: string;
+  category: string;
+  location?: string;
+  description?: string;
+  cover_photo_url: string;
+  photos?: string[];
+  updated_date?: string;
+};
+
 export type JobListing = {
   id: string;
   title: string;
@@ -38,6 +51,15 @@ export type JobListing = {
 
 export function getTestimonials(): Testimonial[] {
   return [...(testimonialsJson as Testimonial[])].sort((a, b) => a.display_order - b.display_order);
+}
+
+/** Events, newest first. */
+export function getEvents(): HiveEvent[] {
+  return [...(eventsJson as HiveEvent[])].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+export function getEvent(id: string): HiveEvent | undefined {
+  return getEvents().find((e) => e.id === id);
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Caveat, Inter, Lora } from "next/font/google";
+import { Caveat, Lora, Poppins } from "next/font/google";
 import { HashScrollManager } from "@/components/AppLink";
 import { ChatLauncher } from "@/components/chat/ChatLauncher";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
@@ -13,7 +13,9 @@ const lora = Lora({
   display: "swap",
   variable: "--font-serif",
 });
-const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
+// Poppins: the body, menu, button and form font (client's suggestion). Headings stay in Lora for a
+// mixed serif/sans look; to go all-Poppins, point --font-heading and --font-display at --font-poppins in globals.css.
+const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"], display: "swap", variable: "--font-poppins" });
 // Handwritten name labels on the honeycomb portraits.
 const caveat = Caveat({ subsets: ["latin"], display: "swap", variable: "--font-script" });
 
@@ -70,7 +72,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-AU" className={`${lora.variable} ${inter.variable} ${caveat.variable}`}>
+    <html lang="en-AU" className={`${lora.variable} ${poppins.variable} ${caveat.variable}`}>
       <head>
         {/* Without JavaScript, show content that would otherwise wait for its entrance animation. */}
         <noscript>
