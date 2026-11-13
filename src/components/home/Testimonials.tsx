@@ -2,29 +2,19 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
-import { OrgChart } from "@/components/home/OrgChart";
 import { SmartImage } from "@/components/SmartImage";
 import type { Testimonial } from "@/lib/data";
 import { DURATION, EASE } from "@/lib/motion";
 
-type Tab = "employee" | "client";
-
+// Client testimonials only. (Employee entries in testimonials.json are not shown on the site.)
 export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
   const reduce = useReducedMotion();
-  const [tab, setTab] = useState<Tab>("employee");
   const [selected, setSelected] = useState(0);
 
-  const employees = testimonials.filter((t) => (t.testimonial_type || "employee") === "employee");
-  const clients = testimonials.filter((t) => t.testimonial_type === "client");
-  const hasClients = clients.length > 0;
-  const list = tab === "employee" ? employees : clients;
+  const list = testimonials.filter((t) => t.testimonial_type === "client");
   if (!list.length) return null;
 
   const active = list[Math.min(selected, list.length - 1)] || list[0];
-  const switchTab = (next: Tab) => {
-    setTab(next);
-    setSelected(0);
-  };
 
   return (
     <section
@@ -33,91 +23,49 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
       aria-labelledby="testimonials-heading"
     >
       <div className="mb-12">
-        <p className="text-accent text-sm font-medium tracking-[0.25em] uppercase mb-5">Living Proof</p>
+        <p className="text-accent text-sm font-medium tracking-[0.25em] uppercase mb-5">Client Voices</p>
         <h2
           id="testimonials-heading"
-          className="font-heading text-4xl lg:text-5xl font-medium text-balance leading-tight max-w-2xl mb-8"
+          className="font-heading text-4xl lg:text-5xl font-medium text-balance leading-tight max-w-2xl"
         >
-          The people behind the work
+          What our clients say
         </h2>
-        {hasClients && (
-          <div className="inline-flex gap-1 p-1 bg-muted rounded-full" role="tablist" aria-label="Testimonials">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "employee"}
-              onClick={() => switchTab("employee")}
-              className={
-                "px-5 py-2 rounded-full text-sm font-medium transition-colors " +
-                (tab === "employee" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground")
-              }
-            >
-              Our People
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "client"}
-              onClick={() => switchTab("client")}
-              className={
-                "px-5 py-2 rounded-full text-sm font-medium transition-colors " +
-                (tab === "client" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground")
-              }
-            >
-              Client Voices
-            </button>
-          </div>
-        )}
       </div>
       <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
-        {tab === "employee" ? (
-          <div className="lg:col-span-7">
-            <OrgChart
-              people={list}
-              selectedId={active.id}
-              onSelect={(id) => setSelected(list.findIndex((t) => t.id === id))}
-            />
-          </div>
-        ) : (
-          <div className="lg:col-span-5 grid grid-cols-2 gap-4">
-            {list.map((t, i) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setSelected(i)}
-                aria-pressed={selected === i}
-                aria-label={`Read ${t.employee_name}'s story`}
-                className={
-                  "group relative aspect-[3/4] overflow-hidden rounded-sm transition-all duration-300 " +
-                  (selected === i ? "ring-2 ring-accent ring-offset-4 ring-offset-background" : "opacity-70 hover:opacity-100")
-                }
-              >
-                <SmartImage
-                  src={t.photo_url}
-                  alt={t.employee_name}
-                  fill
-                  sizes="(min-width: 1024px) 20vw, 50vw"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
-                  <p className="text-background font-medium text-sm">{t.employee_name}</p>
-                  {(t.client_title || t.role) && (
-                    <p className="text-background/70 text-xs">{t.client_title || t.role}</p>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-        <div
-          className={
-            (tab === "employee" ? "lg:col-span-5" : "lg:col-span-7") + " flex flex-col justify-center"
-          }
-        >
+        <div className="lg:col-span-5 grid grid-cols-2 gap-4">
+          {list.map((t, i) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setSelected(i)}
+              aria-pressed={selected === i}
+              aria-label={`Read ${t.employee_name}'s story`}
+              className={
+                "group relative aspect-[3/4] overflow-hidden rounded-sm transition-all duration-300 " +
+                (selected === i ? "ring-2 ring-accent ring-offset-4 ring-offset-background" : "opacity-70 hover:opacity-100")
+              }
+            >
+              <SmartImage
+                src={t.photo_url}
+                alt={t.employee_name}
+                fill
+                sizes="(min-width: 1024px) 20vw, 50vw"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
+                <p className="text-background font-medium text-sm">{t.employee_name}</p>
+                {(t.client_title || t.role) && (
+                  <p className="text-background/70 text-xs">{t.client_title || t.role}</p>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="lg:col-span-7 flex flex-col justify-center">
           <AnimatePresence mode="wait">
             <motion.figure
-              key={`${active.id}-${tab}`}
+              key={active.id}
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -146,35 +94,15 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
                 }
               >
                 <div>
-                  <p
-                    className={
-                      "font-heading font-semibold " + (active.quote ? "text-lg" : "text-3xl lg:text-4xl font-medium")
-                    }
-                  >
-                    {active.employee_name}
-                  </p>
+                  <p className="font-heading font-semibold text-lg">{active.employee_name}</p>
                   <p className="text-muted-foreground text-sm">
-                    {(tab === "employee"
-                      ? [active.role, active.department]
-                      : [active.client_title, active.client_company]
-                    )
-                      .filter(Boolean)
-                      .join(" · ")}
+                    {[active.client_title, active.client_company].filter(Boolean).join(" · ")}
                   </p>
                 </div>
-                {tab === "employee" ? (
-                  active.years_at_company != null && (
-                    <div className="text-right">
-                      <p className="font-heading text-3xl font-semibold text-accent">{active.years_at_company}</p>
-                      <p className="text-xs text-muted-foreground tracking-wider uppercase">Years at Hive</p>
-                    </div>
-                  )
-                ) : (
-                  <div className="text-right">
-                    <p className="font-heading text-lg font-semibold text-accent">{active.client_company}</p>
-                    <p className="text-xs text-muted-foreground tracking-wider uppercase">Partner</p>
-                  </div>
-                )}
+                <div className="text-right">
+                  <p className="font-heading text-lg font-semibold text-accent">{active.client_company}</p>
+                  <p className="text-xs text-muted-foreground tracking-wider uppercase">Partner</p>
+                </div>
               </figcaption>
             </motion.figure>
           </AnimatePresence>

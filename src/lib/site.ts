@@ -32,7 +32,7 @@ export const SOCIAL = {
 
 export const NAV_LINKS = [
   { label: "Services", href: "/#services" },
-  { label: "Our People", href: "/#testimonials" },
+  { label: "Our People", href: "/#hive" },
   { label: "Events", href: "/our-events" },
   { label: "Gallery", href: "/gallery" },
   { label: "Careers", href: "/careers" },

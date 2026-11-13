@@ -259,7 +259,7 @@ export function HiveTeam() {
   const close = useCallback(() => setOpenIndex(null), []);
 
   return (
-    <section className="py-24 lg:py-32 px-6 sm:px-12 lg:px-24 max-w-7xl mx-auto" aria-labelledby="hive-heading">
+    <section id="hive" className="py-24 lg:py-32 px-6 sm:px-12 lg:px-24 max-w-7xl mx-auto" aria-labelledby="hive-heading">
       <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
         <div className="lg:col-span-5">
           <motion.div
