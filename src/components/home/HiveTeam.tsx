@@ -8,30 +8,28 @@ import { DURATION, EASE } from "@/lib/motion";
 // The team as a slowly turning globe of hex portraits (ported from the Base44 "hive-globe" prototype).
 // Points are spread over a sphere (Fibonacci lattice); each frame we rotate them, project with a
 // simple perspective, and fade/shrink the ones at the back. Drag, swipe or use the arrow keys to
-// spin it; hovering pauses it and shows the role. A click (not a drag) opens the photo full size.
-type Tile = { url: string; name: string; short?: string; role?: string; focus?: string; center?: boolean };
+// spin it; hovering pauses it and enlarges the card. A click (not a drag) opens the photo full size.
+type Tile = { url: string; name: string; focus?: string; center?: boolean };
 
-const CORE_TEAM: { name: string; slug: string; short?: string; role: string; focus?: string; ext?: string }[] = [
-  { name: "Honey Lei Amar", slug: "honey", short: "Honey", role: "Client Success", focus: "50% 18%" },
-  { name: "Myra Flor", slug: "myra", short: "Myra", role: "Operations", focus: "50% 18%" },
-  { name: "Danica", slug: "danica", role: "Quality", focus: "50% 0%" },
-  { name: "May Ann Basallote", slug: "mayann", short: "May Ann", role: "Team Lead", focus: "50% 18%" },
-  { name: "Dia", slug: "dia", role: "Recruitment" },
-  { name: "Ivie", slug: "ivie", role: "Customer Support", ext: "png" },
-  { name: "Babelyn Bendana", slug: "babelyn", short: "Babelyn", role: "Workforce Planning", focus: "50% 18%" },
-  { name: "Jayrrah", slug: "jayrrah", role: "Training", ext: "png" },
-  { name: "Angela", slug: "angela", role: "Accounts" },
-  { name: "Jilian", slug: "jilian", role: "Data Operations" },
-  { name: "Mikee Cid", slug: "mikee", short: "Mikee", role: "IT Support" },
-  { name: "Ylaiza", slug: "ylaiza", role: "Compliance", ext: "png" },
-  { name: "Gretchen Obligar", slug: "gretchen", short: "Gretchen", role: "People & Culture", focus: "50% 18%" },
+const CORE_TEAM: { name: string; slug: string; focus?: string; ext?: string }[] = [
+  { name: "Honey", slug: "honey", focus: "50% 18%" },
+  { name: "Myra", slug: "myra", focus: "50% 18%" },
+  { name: "Danica", slug: "danica", focus: "50% 0%" },
+  { name: "May Ann", slug: "mayann", focus: "50% 18%" },
+  { name: "Dia", slug: "dia" },
+  { name: "Ivie", slug: "ivie", ext: "png" },
+  { name: "Babelyn", slug: "babelyn", focus: "50% 18%" },
+  { name: "Jayrrah", slug: "jayrrah", ext: "png" },
+  { name: "Angela", slug: "angela" },
+  { name: "Jilian", slug: "jilian" },
+  { name: "Mikee", slug: "mikee" },
+  { name: "Ylaiza", slug: "ylaiza", ext: "png" },
+  { name: "Gretchen", slug: "gretchen", focus: "50% 18%" },
 ];
 
 const TILES: Tile[] = CORE_TEAM.map((s) => ({
   url: `/media/team/${s.slug}.${s.ext ?? "jpg"}`,
   name: s.name,
-  short: s.short,
-  role: s.role,
   focus: s.focus,
 }));
 
@@ -48,7 +46,7 @@ function fibonacciSphere(n: number) {
   });
 }
 
-function HiveGlobe({ members, onOpen }: { members: Tile[]; onOpen: (index: number) => void }) {
+function HiveGlobe({ members, onOpen, locked }: { members: Tile[]; onOpen: (index: number) => void; locked: boolean }) {
   const sceneRef = useRef<HTMLDivElement>(null);
   const nodes = useRef<(HTMLDivElement | null)[]>([]);
   const scrims = useRef<(HTMLSpanElement | null)[]>([]);
@@ -58,6 +56,7 @@ function HiveGlobe({ members, onOpen }: { members: Tile[]; onOpen: (index: numbe
     velocity: 0,
     dragging: false,
     paused: false,
+    locked: false, // true while the photo viewer is open: the globe holds still
     reduceMotion: false,
     pointerX: 0,
     startX: 0,
@@ -69,6 +68,11 @@ function HiveGlobe({ members, onOpen }: { members: Tile[]; onOpen: (index: numbe
     focal: 440,
     last: 0,
   });
+
+  useEffect(() => {
+    st.current.locked = locked;
+    if (locked) st.current.velocity = 0;
+  }, [locked]);
 
   // Card size and sphere radius follow the container.
   const measure = useCallback(() => {
@@ -104,7 +108,8 @@ function HiveGlobe({ members, onOpen }: { members: Tile[]; onOpen: (index: numbe
       const s = st.current;
       const dt = s.last ? Math.min((now - s.last) / 1000, 0.05) : 0.016;
       s.last = now;
-      if (!s.dragging && !s.paused && !s.reduceMotion) s.angle += SPIN * dt;
+      if (!s.dragging && !s.paused && !s.locked && !s.reduceMotion) s.angle += SPIN * dt;
+      if (s.locked) s.velocity = 0;
       if (s.velocity !== 0) {
         s.angle += s.velocity * dt;
         s.velocity *= 0.9 ** (dt * 60); // inertia after a flick
@@ -237,9 +242,8 @@ function HiveGlobe({ members, onOpen }: { members: Tile[]; onOpen: (index: numbe
                   }}
                 />
               </div>
-              <span className="hive-name">{m.short ?? m.name.split(" ")[0]}</span>
-              {m.role && <span className="hive-role">{m.role}</span>}
-            </div>
+              <span className="hive-name">{m.name}</span>
+                          </div>
           </div>
         ))}
       </div>
@@ -283,7 +287,7 @@ export function HiveTeam() {
           </motion.div>
         </div>
         <div className="lg:col-span-7">
-          <HiveGlobe members={TILES} onOpen={setOpenIndex} />
+          <HiveGlobe members={TILES} onOpen={setOpenIndex} locked={openIndex !== null} />
         </div>
       </div>
 
