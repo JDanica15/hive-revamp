@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { generateDraft, regenerateCover } from "@/lib/blog-agent";
+import { MIGRATION_HINT, getBlogSettings } from "@/lib/blog-settings";
 import { BLOG_BUCKET, POST_STATUSES, isSlug, slugify } from "@/lib/blog";
 import { GEMINI_CONFIGURED, checkGemini } from "@/lib/gemini";
 import { TOO_MANY, withinRateLimit } from "@/lib/request-guard";
@@ -30,7 +31,7 @@ export async function generatePostNow(_prev: State, form: FormData): Promise<Sta
   if (!(await withinRateLimit("blogGenerate", "site"))) return { error: TOO_MANY };
   let id: string;
   try {
-    const result = await generateDraft({ topic: String(form.get("topic") ?? "") });
+    const result = await generateDraft({ topic: String(form.get("topic") ?? ""), facts: String(form.get("facts") ?? "") });
     id = result.id;
   } catch (err) {
     console.error("Blog generation failed:", err);
@@ -135,13 +136,38 @@ export async function regeneratePostImage(_prev: State, form: FormData): Promise
   return { info: "New cover image generated." };
 }
 
-export async function addTopic(form: FormData) {
+/** Queues a topic. A Hive topic must come with facts (or a company brief to draw on). */
+export async function addTopic(_prev: State, form: FormData): Promise<State> {
   await requireAdmin();
   const topic = clean(form.get("topic"), 200);
-  if (!topic) return;
-  const { error } = await db().from("blog_topics").insert({ topic });
-  if (error) throw new Error(error.message);
+  const facts = clean(form.get("facts"), 4000, { multiline: true });
+  const kind = String(form.get("kind")) === "hive" ? "hive" : "general";
+  if (!topic) return { error: "Enter a topic." };
+  if (kind === "hive" && !facts) {
+    let hasBrief = false;
+    try {
+      hasBrief = Boolean((await getBlogSettings()).company_brief.trim());
+    } catch (err) {
+      return { error: message(err) };
+    }
+    if (!hasBrief) return { error: "A Hive topic needs facts about Hive: add some below, or fill in the company brief first." };
+  }
+  const { error } = await db().from("blog_topics").insert({ topic, facts, kind });
+  if (error) return { error: error.message.includes("column") ? `Couldn't save. ${MIGRATION_HINT}` : error.message };
   revalidatePath("/admin/blog");
+  return { info: "Added to the queue." };
+}
+
+/** Saves the company brief (facts about Hive the writer may state) and the Hive-post rotation. */
+export async function saveBlogSettings(_prev: State, form: FormData): Promise<State> {
+  await requireAdmin();
+  const brief = clean(form.get("company_brief"), 6000, { multiline: true });
+  const every = Number(form.get("hive_post_every"));
+  if (!Number.isInteger(every) || every < 0 || every > 20) return { error: "Choose a valid rotation." };
+  const { error } = await db().from("blog_settings").upsert({ id: 1, company_brief: brief, hive_post_every: every, updated_date: new Date().toISOString() });
+  if (error) return { error: error.message.includes("blog_settings") ? `Couldn't save. ${MIGRATION_HINT}` : error.message };
+  revalidatePath("/admin/blog");
+  return { info: "Saved." };
 }
 
 export async function removeTopic(id: string) {

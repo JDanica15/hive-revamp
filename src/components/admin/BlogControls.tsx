@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useActionState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import {
+  addTopic,
   checkGeminiConnection,
   deletePost,
   generatePostNow,
   regeneratePostImage,
   removeTopic,
+  saveBlogSettings,
   savePost,
   setPostStatus,
 } from "@/app/admin/blog-actions";
@@ -58,6 +60,20 @@ export function GeneratePostForm() {
           placeholder="Leave empty to use the next queued topic, or let the agent choose"
           className={FIELD}
         />
+      </div>
+      <div>
+        <label htmlFor="facts" className={LABEL}>
+          Facts about Hive to include (optional)
+        </label>
+        <textarea
+          id="facts"
+          name="facts"
+          rows={4}
+          maxLength={4000}
+          placeholder={"For a post about Hive itself, list the real details, one per line. The writer uses only these (plus your company brief).\nExample: We use AI tools to draft first-pass bookkeeping reconciliations; a person always reviews them."}
+          className={FIELD}
+        />
+        <p className="text-xs text-muted-foreground mt-2">Needs a topic above. Leave empty for a general post.</p>
       </div>
       <div className="flex items-center gap-4 flex-wrap">
         <Pending idle="Write a post now" busy="Writing and drawing… this takes about a minute" />
@@ -238,5 +254,90 @@ export function PostEditor({ post }: { post: Post }) {
         </div>
       </form>
     </div>
+  );
+}
+
+/** Queue a topic, optionally as an "About Hive" post with the facts the writer may use. */
+export function AddTopicForm() {
+  const [state, action] = useActionState(addTopic, null);
+  return (
+    <form action={action} className="bg-background border border-border rounded-sm p-5 space-y-4 max-w-3xl mb-4">
+      <div className="grid sm:grid-cols-[1fr_12rem] gap-4">
+        <div>
+          <label htmlFor="queue-topic" className={LABEL}>
+            Topic
+          </label>
+          <input id="queue-topic" name="topic" required maxLength={200} placeholder="e.g. How Hive combines AI tools with a human team" className={FIELD} />
+        </div>
+        <div>
+          <label htmlFor="queue-kind" className={LABEL}>
+            Type
+          </label>
+          <select id="queue-kind" name="kind" defaultValue="general" className={FIELD}>
+            <option value="general">General</option>
+            <option value="hive">About Hive</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label htmlFor="queue-facts" className={LABEL}>
+          Facts about Hive (required for “About Hive” topics)
+        </label>
+        <textarea
+          id="queue-facts"
+          name="facts"
+          rows={3}
+          maxLength={4000}
+          placeholder="One real fact per line. The writer states only these and never invents more."
+          className={FIELD}
+        />
+      </div>
+      <div className="flex items-center gap-4 flex-wrap">
+        <Pending idle="Add to queue" busy="Adding…" />
+        <Notice state={state} />
+      </div>
+    </form>
+  );
+}
+
+/** The company brief (facts the writer may state about Hive) and how often a Hive post comes up. */
+export function BlogSettingsForm({ brief, every }: { brief: string; every: number }) {
+  const [state, action] = useActionState(saveBlogSettings, null);
+  return (
+    <form action={action} className="bg-background border border-border rounded-sm p-5 space-y-4">
+      <div>
+        <label htmlFor="company_brief" className={LABEL}>
+          Company brief
+        </label>
+        <textarea
+          id="company_brief"
+          name="company_brief"
+          rows={8}
+          maxLength={6000}
+          defaultValue={brief}
+          placeholder={"Write true things about Hive that every post may rely on: what you do, who you serve, your values, how AI is used, what stays human. Short lines or bullets.\n\nThe writer states ONLY what is written here (or in a topic's own facts) about Hive."}
+          className={FIELD}
+        />
+        <p className="text-xs text-muted-foreground mt-2">
+          Keep it accurate and current. If it isn&apos;t written here, the writer won&apos;t say it about Hive.
+        </p>
+      </div>
+      <div className="max-w-sm">
+        <label htmlFor="hive_post_every" className={LABEL}>
+          Scheduled posts about Hive
+        </label>
+        <select id="hive_post_every" name="hive_post_every" defaultValue={String(every)} className={FIELD}>
+          <option value="0">Never rotate (follow the queue order)</option>
+          <option value="2">Every 2nd post</option>
+          <option value="3">Every 3rd post</option>
+          <option value="4">Every 4th post</option>
+          <option value="5">Every 5th post</option>
+        </select>
+      </div>
+      <div className="flex items-center gap-4 flex-wrap">
+        <Pending idle="Save brief and rotation" busy="Saving…" />
+        <Notice state={state} />
+      </div>
+    </form>
   );
 }

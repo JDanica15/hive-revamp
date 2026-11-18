@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { addTopic } from "@/app/admin/blog-actions";
-import { GeminiCheck, GeneratePostForm, PostRowActions, RemoveTopicButton } from "@/components/admin/BlogControls";
-import { SubmitButton } from "@/components/admin/SubmitButton";
-import { BADGE, FIELD, STATUS_TONE } from "@/components/admin/styles";
+import { AddTopicForm, BlogSettingsForm, GeminiCheck, GeneratePostForm, PostRowActions, RemoveTopicButton } from "@/components/admin/BlogControls";
+import { BADGE, STATUS_TONE } from "@/components/admin/styles";
 import { formatWhen, label, requireAdmin } from "@/lib/admin";
 import type { BlogPost } from "@/lib/blog";
+import { MIGRATION_HINT } from "@/lib/blog-settings";
 import { GEMINI_CONFIGURED } from "@/lib/gemini";
 import { db } from "@/lib/supabase";
 
@@ -14,10 +13,12 @@ export const maxDuration = 120;
 
 export default async function BlogAdminPage() {
   await requireAdmin();
-  const [posts, topics] = await Promise.all([
+  const [posts, topics, settings] = await Promise.all([
     db().from("blog_posts").select("id, slug, title, excerpt, status, source, cover_image_url, fact_check_notes, created_date, published_date").order("created_date", { ascending: false }).limit(100),
-    db().from("blog_topics").select("id, topic").eq("status", "queued").order("created_date"),
+    db().from("blog_topics").select("id, topic, kind, facts").eq("status", "queued").order("created_date"),
+    db().from("blog_settings").select("company_brief, hive_post_every").eq("id", 1).maybeSingle(),
   ]);
+  const needsMigration = Boolean(topics.error || settings.error);
   if (posts.error) {
     return (
       <section>
@@ -30,7 +31,8 @@ export default async function BlogAdminPage() {
     );
   }
   const list = posts.data as unknown as BlogPost[];
-  const queued = (topics.data ?? []) as { id: string; topic: string }[];
+  const queued = (topics.data ?? []) as { id: string; topic: string; kind: string; facts: string }[];
+  const cfg = (settings.data as { company_brief: string; hive_post_every: number } | null) ?? { company_brief: "", hive_post_every: 3 };
 
   return (
     <section aria-labelledby="blog-heading" className="space-y-10">
@@ -50,25 +52,43 @@ export default async function BlogAdminPage() {
         </p>
       )}
 
+      {needsMigration && (
+        <p className="bg-amber-50 border border-amber-200 text-amber-900 rounded-sm p-4 text-sm">
+          <strong>One more setup step.</strong> {MIGRATION_HINT}
+        </p>
+      )}
+
       <GeneratePostForm />
       <GeminiCheck />
 
       <div>
+        <h2 className="font-heading text-lg font-medium mb-3">About Hive</h2>
+        <p className="text-sm text-muted-foreground mb-4 max-w-2xl">
+          The writer doesn&apos;t know how Hive really works, so it only states what you tell it here. Write the facts once, and it can write about
+          your use of AI, your priorities and more without making anything up.
+        </p>
+        <BlogSettingsForm brief={cfg.company_brief} every={cfg.hive_post_every} />
+      </div>
+
+      <div>
         <h2 className="font-heading text-lg font-medium mb-3">Topic queue</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          The scheduled writer takes the oldest topic first. When the queue is empty it picks its own from your service areas.
+          The scheduled writer works through these oldest first, mixing in “About Hive” topics at the rotation you set above. When nothing is queued it picks a general topic itself.
         </p>
-        <form action={addTopic} className="flex gap-3 mb-4 max-w-2xl">
-          <input name="topic" required maxLength={200} placeholder="e.g. How to hand over bookkeeping to an offshore team" className={FIELD} aria-label="New topic" />
-          <SubmitButton>Add</SubmitButton>
-        </form>
+        <AddTopicForm />
         {queued.length === 0 ? (
           <p className="text-sm text-muted-foreground">No queued topics.</p>
         ) : (
           <ul className="space-y-2">
             {queued.map((t) => (
               <li key={t.id} className="bg-background border border-border rounded-sm px-4 py-2.5 flex items-center justify-between gap-4 text-sm">
-                <span className="min-w-0 break-words">{t.topic}</span>
+                <span className="min-w-0 break-words">
+                  <span className={BADGE + " mr-2 " + (t.kind === "hive" ? "bg-accent/15 text-accent" : "bg-zinc-200 text-zinc-700")}>
+                    {t.kind === "hive" ? "About Hive" : "General"}
+                  </span>
+                  {t.topic}
+                  {t.facts && <span className="block text-xs text-muted-foreground mt-1 line-clamp-2 whitespace-pre-line">{t.facts}</span>}
+                </span>
                 <RemoveTopicButton id={t.id} />
               </li>
             ))}

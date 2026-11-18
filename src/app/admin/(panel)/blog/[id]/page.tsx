@@ -40,6 +40,16 @@ export default async function ReviewPostPage({ params }: { params: Promise<{ id:
         </div>
       )}
 
+      {post.facts_used && (
+        <details className="bg-background border border-border rounded-sm p-4 text-sm">
+          <summary className="cursor-pointer font-medium">Facts about Hive this post was written from</summary>
+          <p className="mt-3 whitespace-pre-line text-muted-foreground">{post.facts_used}</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Check the article against these. Anything about Hive that isn&apos;t here or in your company brief shouldn&apos;t be in the post.
+          </p>
+        </details>
+      )}
+
       <PostEditor post={post} />
     </section>
   );

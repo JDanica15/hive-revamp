@@ -1,5 +1,6 @@
 import "server-only";
 import { BLOG_BUCKET, isSlug, slugify, type BlogPost } from "@/lib/blog";
+import { MIGRATION_HINT, getBlogSettings } from "@/lib/blog-settings";
 import { GeminiError, IMAGE_MODEL, TEXT_MODEL, generateImage, generateJson } from "@/lib/gemini";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 import { db } from "@/lib/supabase";
@@ -19,6 +20,8 @@ Voice: warm, clear, practical, confident but never salesy. Australian English sp
 
 Hard rules:
 - NEVER invent statistics, studies, percentages, quotes, client names, case studies, awards or facts about ${SITE_NAME}'s size, pricing or results. Speak in general terms or use clearly hedged language ("many businesses find...").
+- About ${SITE_NAME} itself, you may state ONLY what appears in the "COMPANY BRIEF" or "FACTS FOR THIS POST" sections of the request. Anything else about ${SITE_NAME} (tools used, processes, numbers, plans, clients, history) must not be stated, implied or guessed, even if it sounds plausible. If the supplied facts are thin, write a shorter post that stays inside them rather than padding with invented specifics.
+- When facts are supplied, keep their meaning exactly: do not strengthen them (for example "we trial X" must not become "we rely on X").
 - Do not name real people or companies except well-known, uncontroversial examples where essential.
 - Do not give legal, tax or financial advice as fact; suggest checking with a qualified professional where relevant.
 - No clickbait. No emojis. No filler introductions like "In today's fast-paced world".
@@ -70,10 +73,31 @@ const IMAGE_STYLE =
 
 export type AgentResult = { id: string; title: string; status: string; imageOk: boolean; imageError?: string };
 
-/** Next queued topic (marked used once the post is saved), or null to let the agent choose. */
-async function nextTopic() {
-  const { data } = await db().from("blog_topics").select("id, topic").eq("status", "queued").order("created_date").limit(1).maybeSingle();
-  return (data as { id: string; topic: string } | null) ?? null;
+type Topic = { id: string; topic: string; facts: string; kind: "general" | "hive" };
+
+/**
+ * Next queued topic (marked used once the post is saved), or null to let the agent choose.
+ * Rotation: with hive_post_every = N, every Nth AI post is a Hive post (one written from supplied
+ * facts) when a Hive topic is queued; otherwise the oldest General topic. If the preferred kind has
+ * nothing queued, the other kind is used rather than letting the agent improvise.
+ */
+async function nextTopic(hiveEvery: number): Promise<Topic | null> {
+  const { count } = await db().from("blog_posts").select("id", { count: "exact", head: true }).eq("source", "ai");
+  const hiveTurn = hiveEvery > 0 && ((count ?? 0) % hiveEvery) === hiveEvery - 1;
+  const oldest = async (kind: "general" | "hive") => {
+    const { data, error } = await db()
+      .from("blog_topics")
+      .select("id, topic, facts, kind")
+      .eq("status", "queued")
+      .eq("kind", kind)
+      .order("created_date")
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(`Could not read the topic queue. ${MIGRATION_HINT} (${error.message})`);
+    return (data as Topic | null) ?? null;
+  };
+  const order = hiveTurn ? (["hive", "general"] as const) : (["general", "hive"] as const);
+  return (await oldest(order[0])) ?? (await oldest(order[1]));
 }
 
 async function uniqueSlug(title: string) {
@@ -99,24 +123,38 @@ async function makeCover(prompt: string, slug: string) {
   return { path, url: data.publicUrl };
 }
 
-/** Writes one new post (with cover image) and saves it. `topic` overrides the queue. */
-export async function generateDraft(opts: { topic?: string } = {}): Promise<AgentResult> {
+/**
+ * Writes one new post (with cover image) and saves it. `topic` / `facts` override the queue:
+ * facts make it a Hive post (written only from those facts plus the company brief).
+ */
+export async function generateDraft(opts: { topic?: string; facts?: string } = {}): Promise<AgentResult> {
+  const settings = await getBlogSettings();
   const manualTopic = clean(opts.topic, 200);
-  const queued = manualTopic ? null : await nextTopic();
+  const manualFacts = clean(opts.facts, 4000, { multiline: true });
+  const queued = manualTopic || manualFacts ? null : await nextTopic(settings.hive_post_every);
   const topic = manualTopic || queued?.topic || "";
+  const facts = manualFacts || queued?.facts || "";
+  if (facts && !topic) throw new GeminiError("Add a topic to go with those facts.");
 
   const { data: recent } = await db().from("blog_posts").select("title").order("created_date", { ascending: false }).limit(25);
-  const avoid = (recent ?? []).map((r: { title: string }) => `- ${r.title}`).join("\n");
+  const NL = "\n";
+  const avoid = (recent ?? []).map((r: { title: string }) => `- ${r.title}`).join(NL);
 
-  const prompt = topic
-    ? `Write a new blog post about: ${topic}`
-    : `Choose a fresh, genuinely useful topic from these areas and write the post:\n${PILLARS.map((p) => `- ${p}`).join("\n")}`;
+  const brief = settings.company_brief.trim();
+  const sections = [
+    topic
+      ? `Write a new blog post about: ${topic}`
+      : `Choose a fresh, genuinely useful topic from these areas and write the post:${NL}${PILLARS.map((p) => `- ${p}`).join(NL)}`,
+    brief
+      ? `COMPANY BRIEF (verified facts about ${SITE_NAME}; you may state these as true):${NL}${brief}`
+      : `COMPANY BRIEF: none supplied. Do not state anything specific about ${SITE_NAME}.`,
+    facts
+      ? `FACTS FOR THIS POST (verified by ${SITE_NAME}; this is a ${SITE_NAME} post, so build it from these and stay inside them):${NL}${facts}`
+      : "",
+    avoid ? `Existing posts (do not repeat these topics or titles):${NL}${avoid}` : "",
+  ].filter(Boolean);
 
-  const draft = await generateJson<Draft>({
-    system: SYSTEM,
-    prompt: `${prompt}\n\n${avoid ? `Existing posts (do not repeat these topics or titles):\n${avoid}\n` : ""}`,
-    schema: POST_SCHEMA,
-  });
+  const draft = await generateJson<Draft>({ system: SYSTEM, prompt: sections.join(NL + NL), schema: POST_SCHEMA });
 
   const title = clean(draft.title, 120);
   const body = clean(draft.body, 20000, { multiline: true });
@@ -148,6 +186,7 @@ export async function generateDraft(opts: { topic?: string } = {}): Promise<Agen
       cover_alt: clean(draft.image_alt, 200),
       image_prompt: imagePrompt,
       fact_check_notes: clean(draft.fact_check_notes, 2000, { multiline: true }),
+      facts_used: facts,
       status,
       source: "ai",
       topic,

@@ -18,6 +18,7 @@ export type BlogPost = {
   cover_alt: string;
   image_prompt: string;
   fact_check_notes: string;
+  facts_used: string;
   status: PostStatus;
   source: "manual" | "ai";
   topic: string;
