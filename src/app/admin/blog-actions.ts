@@ -80,6 +80,16 @@ export async function checkGeminiConnection(): Promise<State> {
   }
 }
 
+const COVER_MAX = 4 * 1024 * 1024;
+
+/** Identifies an uploaded image by its first bytes (the filename and declared type are user-controlled). */
+function sniffImage(b: Buffer): { ext: string; type: string } | null {
+  if (b.length > 12 && b[0] === 0x89 && b.toString("latin1", 1, 4) === "PNG") return { ext: "png", type: "image/png" };
+  if (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { ext: "jpg", type: "image/jpeg" };
+  if (b.length > 12 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP") return { ext: "webp", type: "image/webp" };
+  return null;
+}
+
 export async function savePost(_prev: State, form: FormData): Promise<State> {
   await requireAdmin();
   const id = String(form.get("id") ?? "");
@@ -91,9 +101,25 @@ export async function savePost(_prev: State, form: FormData): Promise<State> {
   if (!isSlug(slug)) return { error: "That URL slug isn't valid." };
   if (!(POST_STATUSES as readonly string[]).includes(status)) return { error: "Invalid status." };
 
-  const { data: current } = await db().from("blog_posts").select("slug, status, published_date, cover_image_url").eq("id", id).maybeSingle();
+  const { data: current } = await db().from("blog_posts").select("slug, status, published_date, cover_image_url, cover_image_path").eq("id", id).maybeSingle();
   if (!current) return { error: "Post not found." };
-  if (status === "published" && !current.cover_image_url) return { error: "Add a cover image before publishing (use “Regenerate image”)." };
+  if (status === "published" && IMAGES_ENABLED && !current.cover_image_url) return { error: "Add a cover image before publishing (use “Regenerate image”)." };
+
+  // Optional cover: upload a new one, or tick "remove". Checked before anything is saved.
+  let cover: { cover_image_url: string; cover_image_path: string } | null = null;
+  const file = form.get("cover_file");
+  if (file instanceof File && file.size > 0) {
+    if (file.size > COVER_MAX) return { error: "That image is larger than 4 MB. Please use a smaller one." };
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const kind = sniffImage(bytes);
+    if (!kind) return { error: "The cover must be a PNG, JPG or WebP image." };
+    const path = `${slug}-${Date.now().toString(36)}.${kind.ext}`;
+    const { error: upErr } = await db().storage.from(BLOG_BUCKET).upload(path, bytes, { contentType: kind.type, upsert: false });
+    if (upErr) return { error: `Could not store the image: ${upErr.message}` };
+    cover = { cover_image_url: db().storage.from(BLOG_BUCKET).getPublicUrl(path).data.publicUrl, cover_image_path: path };
+  } else if (form.get("remove_cover") === "on") {
+    cover = { cover_image_url: "", cover_image_path: "" };
+  }
 
   const tags = clean(form.get("tags"), 200)
     .split(",")
@@ -109,11 +135,16 @@ export async function savePost(_prev: State, form: FormData): Promise<State> {
       body,
       tags,
       cover_alt: clean(form.get("cover_alt"), 200),
+      ...(cover ?? {}),
       status,
       published_date: status === "published" ? (current.published_date ?? new Date().toISOString()) : current.published_date,
     })
     .eq("id", id);
-  if (error) return { error: error.code === "23505" ? "Another post already uses that URL slug." : error.message };
+  if (error) {
+    if (cover?.cover_image_path) await db().storage.from(BLOG_BUCKET).remove([cover.cover_image_path]);
+    return { error: error.code === "23505" ? "Another post already uses that URL slug." : error.message };
+  }
+  if (cover && current.cover_image_path) await db().storage.from(BLOG_BUCKET).remove([current.cover_image_path]);
   refreshBlog(current.slug);
   refreshBlog(slug);
   return { info: status === "published" ? "Saved. This post is live on the site." : "Saved." };
@@ -124,7 +155,7 @@ export async function setPostStatus(id: string, status: string) {
   if (!(POST_STATUSES as readonly string[]).includes(status)) throw new Error("Invalid status");
   const { data } = await db().from("blog_posts").select("slug, published_date, cover_image_url").eq("id", id).maybeSingle();
   if (!data) throw new Error("Post not found");
-  if (status === "published" && !data.cover_image_url) throw new Error("Add a cover image before publishing.");
+  if (status === "published" && IMAGES_ENABLED && !data.cover_image_url) throw new Error("Add a cover image before publishing.");
   const { error } = await db()
     .from("blog_posts")
     .update({ status, published_date: status === "published" ? (data.published_date ?? new Date().toISOString()) : data.published_date })

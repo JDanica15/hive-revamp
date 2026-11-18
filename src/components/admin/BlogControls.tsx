@@ -333,6 +333,24 @@ export function PostEditor({
           />
         </div>
         <div>
+          <label htmlFor="cover_file" className={LABEL}>
+            Cover image (optional)
+          </label>
+          {post.cover_image_url && (
+            <div className="flex items-start gap-4 mb-3">
+              {/* eslint-disable-next-line @next/next/no-img-element -- admin preview of a Supabase-hosted file */}
+              <img src={post.cover_image_url} alt={post.cover_alt} className="w-40 aspect-video object-cover rounded-sm border border-border" />
+              <label className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                <input type="checkbox" name="remove_cover" /> Remove this image
+              </label>
+            </div>
+          )}
+          <input id="cover_file" name="cover_file" type="file" accept="image/png,image/jpeg,image/webp" className={FIELD} />
+          <p className="text-xs text-muted-foreground mt-2">
+            PNG, JPG or WebP, up to 4 MB, ideally wide (16:9). Posts publish fine without one. Uploading replaces the current image.
+          </p>
+        </div>
+        <div>
           <label htmlFor="cover_alt" className={LABEL}>
             Cover image description (alt text)
           </label>

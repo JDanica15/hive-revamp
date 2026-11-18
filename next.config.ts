@@ -11,6 +11,8 @@ const supabaseHost = (() => {
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Lets the blog editor upload a cover image (default Server Action limit is 1 MB; the action itself caps files at 4 MB).
+  experimental: { serverActions: { bodySizeLimit: "5mb" } },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
