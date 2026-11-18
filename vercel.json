@@ -1,6 +1,5 @@
 {
   "crons": [
-    { "path": "/api/blog/generate", "schedule": "0 22 * * 1,4" },
-    { "path": "/api/blog/images", "schedule": "20 22 * * 1,4" }
+    { "path": "/api/blog/generate", "schedule": "0 22 * * 1,4" }
   ]
 }

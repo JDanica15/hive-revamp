@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AutoCover, PostEditor } from "@/components/admin/BlogControls";
+import { IMAGES_ENABLED } from "@/lib/gemini";
 import { ArrowLeft } from "@/components/icons";
 import { requireAdmin } from "@/lib/admin";
 import type { BlogPost } from "@/lib/blog";
@@ -40,7 +41,7 @@ export default async function ReviewPostPage({
         {post.source === "ai" && <p className="text-xs text-muted-foreground mt-1">Written by the AI agent ({post.model}). Please read it through before publishing.</p>}
       </div>
 
-      {image === "pending" && !post.cover_image_url && <AutoCover postId={post.id} />}
+      {IMAGES_ENABLED && image === "pending" && !post.cover_image_url && <AutoCover postId={post.id} />}
 
       {hasNotes && (
         <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-sm p-4 text-sm">
@@ -59,7 +60,7 @@ export default async function ReviewPostPage({
         </details>
       )}
 
-      <PostEditor post={post} />
+      <PostEditor post={post} showImage={IMAGES_ENABLED} />
     </section>
   );
 }

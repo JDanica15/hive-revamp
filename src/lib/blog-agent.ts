@@ -1,7 +1,7 @@
 import "server-only";
 import { BLOG_BUCKET, isSlug, slugify, type BlogPost } from "@/lib/blog";
 import { MIGRATION_HINT, getBlogSettings } from "@/lib/blog-settings";
-import { GeminiError, IMAGE_MODEL, TEXT_MODEL, generateImage, generateJson } from "@/lib/gemini";
+import { GeminiError, generateImage, generateJson } from "@/lib/gemini";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 import { db } from "@/lib/supabase";
 import { clean } from "@/lib/validate";
@@ -112,7 +112,7 @@ async function uniqueSlug(title: string) {
 
 /** Generates a cover image and uploads it. Returns the stored path and public URL. */
 async function makeCover(prompt: string, slug: string) {
-  const { bytes, mimeType } = await generateImage(`${prompt}\n\n${IMAGE_STYLE}`);
+  const { bytes, mimeType, model } = await generateImage(`${prompt}\n\n${IMAGE_STYLE}`);
   if (bytes.length > 5 * 1024 * 1024) throw new GeminiError("The generated image was larger than 5 MB.");
   const ext = mimeType.includes("jpeg") ? "jpg" : mimeType.includes("webp") ? "webp" : "png";
   const contentType = ext === "jpg" ? "image/jpeg" : ext === "webp" ? "image/webp" : "image/png";
@@ -120,7 +120,7 @@ async function makeCover(prompt: string, slug: string) {
   const { error } = await db().storage.from(BLOG_BUCKET).upload(path, bytes, { contentType, upsert: false });
   if (error) throw new GeminiError(`Could not store the image: ${error.message}`);
   const { data } = db().storage.from(BLOG_BUCKET).getPublicUrl(path);
-  return { path, url: data.publicUrl };
+  return { path, url: data.publicUrl, model };
 }
 
 /**
@@ -158,7 +158,7 @@ export async function generateDraft(opts: { topic?: string; facts?: string; defe
     avoid ? `Existing posts (do not repeat these topics or titles):${NL}${avoid}` : "",
   ].filter(Boolean);
 
-  const draft = await generateJson<Draft>({ system: SYSTEM, prompt: sections.join(NL + NL), schema: POST_SCHEMA });
+  const { value: draft, model: textModel } = await generateJson<Draft>({ system: SYSTEM, prompt: sections.join(NL + NL), schema: POST_SCHEMA });
 
   const title = clean(draft.title, 120);
   const body = clean(draft.body, 20000, { multiline: true });
@@ -196,7 +196,7 @@ export async function generateDraft(opts: { topic?: string; facts?: string; defe
       status,
       source: "ai",
       topic,
-      model: `${TEXT_MODEL} + ${IMAGE_MODEL}`,
+      model: textModel,
       published_date: status === "published" ? new Date().toISOString() : null,
     })
     .select("id")

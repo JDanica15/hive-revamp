@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/admin";
 import { generateDraft, regenerateCover } from "@/lib/blog-agent";
 import { MIGRATION_HINT, getBlogSettings } from "@/lib/blog-settings";
 import { BLOG_BUCKET, POST_STATUSES, isSlug, slugify } from "@/lib/blog";
-import { GEMINI_CONFIGURED, checkGemini } from "@/lib/gemini";
+import { GEMINI_CONFIGURED, IMAGES_ENABLED, checkGemini } from "@/lib/gemini";
 import { TOO_MANY, withinRateLimit } from "@/lib/request-guard";
 import { db } from "@/lib/supabase";
 import { clean } from "@/lib/validate";
@@ -39,12 +39,13 @@ export async function generatePostNow(_prev: State, form: FormData): Promise<Sta
   }
   refreshBlog();
   // The review page draws the cover image next, as its own request with its own time allowance.
-  redirect(`/admin/blog/${id}?image=pending`);
+  redirect(IMAGES_ENABLED ? `/admin/blog/${id}?image=pending` : `/admin/blog/${id}`);
 }
 
 /** Draws the cover for a post that has none. Safe to call twice: it does nothing once a cover exists. */
 export async function generateCoverFor(id: string): Promise<State> {
   await requireAdmin();
+  if (!IMAGES_ENABLED) return { info: "Cover images are switched off." };
   if (!GEMINI_CONFIGURED) return { error: "GEMINI_API_KEY isn't set." };
   const { data } = await db().from("blog_posts").select("slug, cover_image_url").eq("id", id).maybeSingle();
   if (!data) return { error: "Post not found." };
@@ -64,14 +65,16 @@ export async function checkGeminiConnection(): Promise<State> {
   await requireAdmin();
   if (!GEMINI_CONFIGURED) return { error: "GEMINI_API_KEY isn't set." };
   try {
-    const r = await checkGemini();
-    const lines = [
-      `Text model "${r.textModel}": ${r.textOk ? "working ✓" : `FAILED ✗ ${r.textError}`}`,
-      `Image model "${r.imageModel}": ${r.imageOk ? "listed ✓ (tested when you generate a post)" : "NOT found for this key ✗"}`,
-    ];
-    if (!r.textOk && r.textSuggestions.length) lines.push(`Text models you can use: ${r.textSuggestions.join(", ")} (set GEMINI_TEXT_MODEL)`);
-    if (!r.imageOk && r.suggestions.length) lines.push(`Image models you can use: ${r.suggestions.join(", ")} (set GEMINI_IMAGE_MODEL)`);
-    return r.textOk && r.imageOk ? { info: lines.join("\n") } : { error: lines.join("\n") };
+    const results = await checkGemini();
+    const lines = results.map(
+      (r) => `${r.ok ? "✓" : "✗"} ${r.kind === "text" ? "Text" : "Image"} · ${r.model} · ${r.seconds.toFixed(1)}s${r.ok ? "" : ` · ${r.note}`}`,
+    );
+    const textOk = results.some((r) => r.kind === "text" && r.ok);
+    const imageOk = !IMAGES_ENABLED || results.some((r) => r.kind === "image" && r.ok);
+    if (!textOk) lines.push("No text model is working right now. Wait a few minutes and check again, or set GEMINI_TEXT_MODELS.");
+    else if (!imageOk) lines.push("Articles will work, but cover images won't until the image model above works (see its message).");
+    else lines.push("Everything needed is working.");
+    return textOk && imageOk ? { info: lines.join("\n") } : { error: lines.join("\n") };
   } catch (err) {
     return { error: message(err) };
   }
@@ -141,6 +144,7 @@ export async function deletePost(id: string) {
 
 export async function regeneratePostImage(_prev: State, form: FormData): Promise<State> {
   await requireAdmin();
+  if (!IMAGES_ENABLED) return { error: "Cover images are switched off." };
   if (!GEMINI_CONFIGURED) return { error: "GEMINI_API_KEY isn't set." };
   if (!(await withinRateLimit("blogGenerate", "site"))) return { error: TOO_MANY };
   const id = String(form.get("id") ?? "");

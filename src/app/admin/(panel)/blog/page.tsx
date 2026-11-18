@@ -41,7 +41,7 @@ export default async function BlogAdminPage() {
           Blog
         </h1>
         <p className="text-sm text-muted-foreground max-w-2xl">
-          The AI writer drafts a post with a cover image. Review it, fix anything, then publish.
+          The AI writer drafts a post. Review it, fix anything, then publish.
           {process.env.BLOG_AUTO_PUBLISH === "true" ? " Auto-publish is ON: new posts go live without review." : ""}
         </p>
       </div>

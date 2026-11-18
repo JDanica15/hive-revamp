@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { fillMissingCover } from "@/lib/blog-agent";
 import { cronDenied } from "@/lib/cron-auth";
-import { GEMINI_CONFIGURED } from "@/lib/gemini";
+import { GEMINI_CONFIGURED, IMAGES_ENABLED } from "@/lib/gemini";
 import { withinRateLimit } from "@/lib/request-guard";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
@@ -13,6 +13,7 @@ export const maxDuration = 120;
 export async function GET(request: Request) {
   const denied = cronDenied(request);
   if (denied) return denied;
+  if (!IMAGES_ENABLED) return NextResponse.json({ ok: true, skipped: "Cover images are switched off (BLOG_IMAGES)." });
   if (!isSupabaseConfigured || !GEMINI_CONFIGURED) {
     return NextResponse.json({ error: "Supabase or GEMINI_API_KEY is not configured." }, { status: 503 });
   }
