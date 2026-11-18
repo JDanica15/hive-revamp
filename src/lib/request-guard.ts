@@ -56,6 +56,8 @@ export const LIMITS = {
   chatStartGlobal: { max: 60, windowSeconds: 60 * 60 },
   chatMessage: { max: 40, windowSeconds: 10 * 60 },
   chatConversation: { max: 25, windowSeconds: 10 * 60 },
+  // The blog agent costs money per run: cap it across the whole site (admin button and cron together).
+  blogGenerate: { max: 6, windowSeconds: 60 * 60 },
 } as const;
 
 /**

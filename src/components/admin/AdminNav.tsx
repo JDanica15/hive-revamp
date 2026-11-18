@@ -8,6 +8,7 @@ const TABS = [
   { href: "/admin/chat", label: "Live Chat" },
   { href: "/admin/applications", label: "Applications" },
   { href: "/admin/jobs", label: "Job Listings" },
+  { href: "/admin/blog", label: "Blog" },
 ];
 
 export function AdminNav() {

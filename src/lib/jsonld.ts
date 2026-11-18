@@ -1,4 +1,5 @@
 // schema.org structured data for rich results.
+import type { BlogPost } from "@/lib/blog";
 import type { HiveEvent, JobListing } from "@/lib/data";
 import { CONTACT, LOGO_URL, SERVICES, SITE_DESCRIPTION, SITE_NAME, SITE_URL, SOCIAL, absoluteUrl } from "@/lib/site";
 
@@ -167,5 +168,23 @@ export function eventListJsonLd(events: HiveEvent[]) {
       url: absoluteUrl(`/our-events/${event.id}`),
       name: event.title,
     })),
+  };
+}
+
+export function blogPostJsonLd(post: BlogPost) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt,
+    image: post.cover_image_url ? [post.cover_image_url] : undefined,
+    datePublished: post.published_date ?? post.created_date,
+    dateModified: post.updated_date,
+    keywords: post.tags.join(", "),
+    inLanguage: "en-AU",
+    url: absoluteUrl(`/blog/${post.slug}`),
+    mainEntityOfPage: absoluteUrl(`/blog/${post.slug}`),
+    author: { "@type": "Organization", "@id": ORG_ID, name: SITE_NAME },
+    publisher: { "@type": "Organization", "@id": ORG_ID, name: SITE_NAME, logo: { "@type": "ImageObject", url: absoluteUrl(LOGO_URL) } },
   };
 }

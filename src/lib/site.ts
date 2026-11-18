@@ -35,6 +35,7 @@ export const NAV_LINKS = [
   { label: "Our People", href: "/#hive" },
   { label: "Events", href: "/our-events" },
   { label: "Gallery", href: "/gallery" },
+  { label: "Blog", href: "/blog" },
   { label: "Careers", href: "/careers" },
   { label: "Contact", href: "/#contact" },
 ] as const;

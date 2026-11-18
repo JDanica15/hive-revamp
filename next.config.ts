@@ -1,5 +1,14 @@
 import type { NextConfig } from "next";
 
+// Blog cover images live in Supabase Storage (public "blog-images" bucket).
+const supabaseHost = (() => {
+  try {
+    return new URL(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").hostname;
+  } catch {
+    return "";
+  }
+})();
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
@@ -7,6 +16,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "hivebpo.com" },
+      ...(supabaseHost
+        ? [{ protocol: "https" as const, hostname: supabaseHost, pathname: "/storage/v1/object/public/blog-images/**" }]
+        : []),
     ],
   },
   // Permanent redirects from the old static-export URLs (…/index.html) to clean URLs,

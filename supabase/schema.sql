@@ -105,3 +105,5 @@ values (
 on conflict (id) do nothing;
 
 -- Live chat + atomic rate limiting: see migrations/003_chat.sql (paste its contents here for new projects).
+
+-- Blog + AI writing agent: see migrations/004_blog.sql (paste its contents here for new projects).
