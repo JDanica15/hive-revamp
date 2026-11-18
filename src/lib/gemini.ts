@@ -9,7 +9,7 @@ import "server-only";
 const API = process.env.GEMINI_API_BASE || "https://generativelanguage.googleapis.com/v1beta"; // override only for tests
 
 export const GEMINI_CONFIGURED = Boolean(process.env.GEMINI_API_KEY);
-export const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || "gemini-2.5-flash";
+export const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || "gemini-3.8-flash";
 export const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
 
 export class GeminiError extends Error {}
@@ -86,11 +86,23 @@ export async function generateImage(prompt: string): Promise<{ bytes: Buffer; mi
 /** For the admin "Check Gemini" button: which models this key can use, and whether ours are among them. */
 export async function checkGemini() {
   const data = await call("models?pageSize=200", { timeoutMs: 20_000 });
+  // Being listed isn't enough: Google keeps retired models in the list while rejecting calls to them
+  // ("no longer available to new users"). So make one tiny real request to the text model.
+  let textError = "";
+  try {
+    await call(`models/${TEXT_MODEL}:generateContent`, {
+      timeoutMs: 20_000,
+      body: { contents: [{ role: "user", parts: [{ text: "Reply with the word OK." }] }], generationConfig: { maxOutputTokens: 8 } },
+    });
+  } catch (err) {
+    textError = err instanceof Error ? err.message : "failed";
+  }
   const names = (data.models ?? []).filter((m) => m.supportedGenerationMethods?.includes("generateContent")).map((m) => m.name.replace(/^models\//, ""));
   return {
     textModel: TEXT_MODEL,
     imageModel: IMAGE_MODEL,
-    textOk: names.includes(TEXT_MODEL),
+    textOk: !textError,
+    textError,
     imageOk: names.includes(IMAGE_MODEL),
     suggestions: names.filter((n) => /image/i.test(n)).slice(0, 8),
     textSuggestions: names.filter((n) => /gemini/i.test(n) && !/image|tts|embed|live|audio/i.test(n)).slice(0, 8),

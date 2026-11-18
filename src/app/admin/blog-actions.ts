@@ -46,8 +46,8 @@ export async function checkGeminiConnection(): Promise<State> {
   try {
     const r = await checkGemini();
     const lines = [
-      `Text model "${r.textModel}": ${r.textOk ? "available ✓" : "NOT found for this key ✗"}`,
-      `Image model "${r.imageModel}": ${r.imageOk ? "available ✓" : "NOT found for this key ✗"}`,
+      `Text model "${r.textModel}": ${r.textOk ? "working ✓" : `FAILED ✗ ${r.textError}`}`,
+      `Image model "${r.imageModel}": ${r.imageOk ? "listed ✓ (tested when you generate a post)" : "NOT found for this key ✗"}`,
     ];
     if (!r.textOk && r.textSuggestions.length) lines.push(`Text models you can use: ${r.textSuggestions.join(", ")} (set GEMINI_TEXT_MODEL)`);
     if (!r.imageOk && r.suggestions.length) lines.push(`Image models you can use: ${r.suggestions.join(", ")} (set GEMINI_IMAGE_MODEL)`);
