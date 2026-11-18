@@ -15,22 +15,19 @@ import {
   checkGeminiConnection,
   deletePost,
   generateCoverFor,
-  generatePostNow,
-  regeneratePostImage,
   removeTopic,
   saveBlogSettings,
-  savePost,
   setPostStatus,
 } from "@/app/admin/blog-actions";
 import { FIELD, LABEL } from "@/components/admin/styles";
 import { LoaderCircle, Trash2 } from "@/components/icons";
 
-const BUTTON =
+export const BUTTON =
   "px-3 py-1.5 rounded-sm border border-border text-xs font-medium hover:bg-muted disabled:opacity-60 transition-colors";
-const PRIMARY =
+export const PRIMARY =
   "inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-foreground text-background text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors";
 
-function Notice({
+export function Notice({
   state,
 }: {
   state: { error?: string; info?: string } | null;
@@ -49,65 +46,13 @@ function Notice({
   );
 }
 
-function Pending({ idle, busy }: { idle: string; busy: string }) {
+export function Pending({ idle, busy }: { idle: string; busy: string }) {
   const { pending } = useFormStatus();
   return (
     <button type="submit" disabled={pending} className={PRIMARY}>
       {pending && <LoaderCircle className="w-4 h-4 animate-spin" />}
       {pending ? busy : idle}
     </button>
-  );
-}
-
-/** "Write a post now": optional topic, then the agent writes the post and draws the cover. */
-export function GeneratePostForm() {
-  const [state, action] = useActionState(generatePostNow, null);
-  return (
-    <form
-      action={action}
-      className="bg-background border border-border rounded-sm p-5 space-y-4"
-    >
-      <div>
-        <label htmlFor="topic" className={LABEL}>
-          Topic (optional)
-        </label>
-        <input
-          id="topic"
-          name="topic"
-          maxLength={200}
-          placeholder="Leave empty to use the next queued topic, or let the agent choose"
-          className={FIELD}
-        />
-      </div>
-      <div>
-        <label htmlFor="facts" className={LABEL}>
-          Facts about Hive to include (optional)
-        </label>
-        <textarea
-          id="facts"
-          name="facts"
-          rows={4}
-          maxLength={4000}
-          placeholder={
-            "For a post about Hive itself, list the real details, one per line. The writer uses only these (plus your company brief).\nExample: We use AI tools to draft first-pass bookkeeping reconciliations; a person always reviews them."
-          }
-          className={FIELD}
-        />
-        <p className="text-xs text-muted-foreground mt-2">
-          Needs a topic above. Leave empty for a general post.
-        </p>
-      </div>
-      <div className="flex items-center gap-4 flex-wrap">
-        <Pending
-          idle="Write a post now"
-          busy="Writing the article… up to a minute"
-        />
-        <Notice state={state} />
-      </div>
-      <p className="text-xs text-muted-foreground">
-        The agent writes the article and saves it as a draft. Nothing goes live until you publish it.
-      </p>
-    </form>
   );
 }
 
@@ -137,27 +82,31 @@ export function PostRowActions({
   title,
   status,
   slug,
+  scheduled = false,
 }: {
   id: string;
   title: string;
   status: string;
   slug: string;
+  scheduled?: boolean;
 }) {
   const [pending, start] = useTransition();
   return (
     <>
       {status === "published" ? (
         <>
-          <Link href={`/blog/${slug}`} target="_blank" className={BUTTON}>
-            View
-          </Link>
+          {!scheduled && (
+            <Link href={`/blog/${slug}`} target="_blank" className={BUTTON}>
+              View
+            </Link>
+          )}
           <button
             type="button"
             disabled={pending}
             onClick={() => start(() => setPostStatus(id, "draft"))}
             className={BUTTON}
           >
-            Unpublish
+            {scheduled ? "Unschedule" : "Unpublish"}
           </button>
         </>
       ) : (
@@ -201,211 +150,6 @@ export function RemoveTopicButton({ id }: { id: string }) {
     >
       Remove
     </button>
-  );
-}
-
-type Post = {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string;
-  body: string;
-  tags: string[];
-  cover_alt: string;
-  status: string;
-  image_prompt: string;
-  cover_image_url: string;
-};
-
-/** Edit form for one post, plus a separate form to regenerate the cover. */
-export function PostEditor({
-  post,
-  showImage = false,
-}: {
-  post: Post;
-  showImage?: boolean;
-}) {
-  const [state, action] = useActionState(savePost, null);
-  const [imgState, imgAction] = useActionState(regeneratePostImage, null);
-
-  return (
-    <div className="space-y-6">
-      {showImage && (
-        <form
-          action={imgAction}
-          className="bg-background border border-border rounded-sm p-5 sm:p-6 space-y-4"
-        >
-          <input type="hidden" name="id" value={post.id} />
-          <h2 className="font-heading text-lg font-medium">Cover image</h2>
-          <div className="grid sm:grid-cols-[16rem_1fr] gap-5 items-start">
-            {post.cover_image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element -- admin preview of a Supabase-hosted file
-              <img
-                src={post.cover_image_url}
-                alt={post.cover_alt}
-                className="w-full aspect-video object-cover rounded-sm border border-border"
-              />
-            ) : (
-              <div className="w-full aspect-video rounded-sm border border-dashed border-border grid place-items-center text-sm text-muted-foreground text-center p-4">
-                No image yet. Generate one below.
-              </div>
-            )}
-            <div className="space-y-3">
-              <label htmlFor="image_prompt" className={LABEL}>
-                Image prompt
-              </label>
-              <textarea
-                id="image_prompt"
-                name="image_prompt"
-                rows={3}
-                maxLength={600}
-                defaultValue={post.image_prompt}
-                className={FIELD}
-              />
-              <div className="flex items-center gap-4 flex-wrap">
-                <Pending
-                  idle={
-                    post.cover_image_url ? "Regenerate image" : "Generate image"
-                  }
-                  busy="Drawing… up to a minute"
-                />
-                <Notice state={imgState} />
-              </div>
-            </div>
-          </div>
-        </form>
-      )}
-
-      <form
-        action={action}
-        className="bg-background border border-border rounded-sm p-5 sm:p-8 space-y-6"
-      >
-        <input type="hidden" name="id" value={post.id} />
-        <div>
-          <label htmlFor="title" className={LABEL}>
-            Title *
-          </label>
-          <input
-            id="title"
-            name="title"
-            required
-            maxLength={120}
-            defaultValue={post.title}
-            className={FIELD}
-          />
-        </div>
-        <div className="grid sm:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="slug" className={LABEL}>
-              URL slug
-            </label>
-            <input
-              id="slug"
-              name="slug"
-              maxLength={100}
-              defaultValue={post.slug}
-              className={FIELD}
-            />
-          </div>
-          <div>
-            <label htmlFor="tags" className={LABEL}>
-              Tags (comma separated)
-            </label>
-            <input
-              id="tags"
-              name="tags"
-              maxLength={200}
-              defaultValue={post.tags.join(", ")}
-              className={FIELD}
-            />
-          </div>
-        </div>
-        <div>
-          <label htmlFor="excerpt" className={LABEL}>
-            Excerpt
-          </label>
-          <input
-            id="excerpt"
-            name="excerpt"
-            maxLength={300}
-            defaultValue={post.excerpt}
-            className={FIELD}
-          />
-        </div>
-        <div>
-          <label htmlFor="cover_file" className={LABEL}>
-            Cover image (optional)
-          </label>
-          {post.cover_image_url && (
-            <div className="flex items-start gap-4 mb-3">
-              {/* eslint-disable-next-line @next/next/no-img-element -- admin preview of a Supabase-hosted file */}
-              <img src={post.cover_image_url} alt={post.cover_alt} className="w-40 aspect-video object-cover rounded-sm border border-border" />
-              <label className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                <input type="checkbox" name="remove_cover" /> Remove this image
-              </label>
-            </div>
-          )}
-          <input id="cover_file" name="cover_file" type="file" accept="image/png,image/jpeg,image/webp" className={FIELD} />
-          <p className="text-xs text-muted-foreground mt-2">
-            PNG, JPG or WebP, up to 4 MB, ideally wide (16:9). Posts publish fine without one. Uploading replaces the current image.
-          </p>
-        </div>
-        <div>
-          <label htmlFor="cover_alt" className={LABEL}>
-            Cover image description (alt text)
-          </label>
-          <input
-            id="cover_alt"
-            name="cover_alt"
-            maxLength={200}
-            defaultValue={post.cover_alt}
-            className={FIELD}
-          />
-        </div>
-        <div>
-          <label htmlFor="body" className={LABEL}>
-            Article *
-          </label>
-          <textarea
-            id="body"
-            name="body"
-            required
-            rows={22}
-            defaultValue={post.body}
-            className={FIELD + " font-mono text-sm leading-relaxed"}
-          />
-          <p className="text-xs text-muted-foreground mt-2">
-            Use ## for headings, - for bullets, **bold**, and
-            [text](https://link).
-          </p>
-        </div>
-        <div className="max-w-xs">
-          <label htmlFor="status" className={LABEL}>
-            Status
-          </label>
-          <select
-            id="status"
-            name="status"
-            defaultValue={post.status}
-            className={FIELD}
-          >
-            <option value="draft">Draft (hidden)</option>
-            <option value="published">Published (visible on the site)</option>
-            <option value="rejected">Rejected (hidden)</option>
-          </select>
-        </div>
-        <div className="flex items-center justify-end gap-4 flex-wrap pt-2">
-          <Notice state={state} />
-          <Link
-            href="/admin/blog"
-            className="px-5 py-2.5 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
-            Back to posts
-          </Link>
-          <Pending idle="Save changes" busy="Saving…" />
-        </div>
-      </form>
-    </div>
   );
 }
 

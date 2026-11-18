@@ -108,8 +108,9 @@ async function withModels<T>(models: string[], budgetMs: number, firstAttemptCap
 }
 
 /** Asks a text model for JSON that matches `schema`. Returns the parsed object and the model that answered. */
-export async function generateJson<T>(opts: { system: string; prompt: string; schema: object; temperature?: number }) {
-  return withModels(TEXT_MODELS, 100_000, 45_000, async (model, timeoutMs) => {
+export async function generateJson<T>(opts: { system: string; prompt: string; schema: object; temperature?: number; budgetMs?: number }) {
+  const budget = opts.budgetMs ?? 100_000;
+  return withModels(TEXT_MODELS, budget, Math.min(45_000, Math.round(budget * 0.5)), async (model, timeoutMs) => {
     const data = await call(`models/${model}:generateContent`, {
       model,
       timeoutMs,

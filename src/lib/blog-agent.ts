@@ -12,7 +12,7 @@ import { clean } from "@/lib/validate";
 
 const AUTO_PUBLISH = process.env.BLOG_AUTO_PUBLISH === "true";
 
-const SYSTEM = `You are the content writer for ${SITE_NAME}, a business process outsourcing (BPO) company based in Sydney, Australia, with a team in the Philippines. ${SITE_DESCRIPTION}
+export const SYSTEM = `You are the content writer for ${SITE_NAME}, a business process outsourcing (BPO) company based in Sydney, Australia, with a team in the Philippines. ${SITE_DESCRIPTION}
 
 Write blog posts for business owners and operations managers who are considering or already using outsourced HR, bookkeeping/finance and customer-service support.
 
@@ -38,7 +38,7 @@ const PILLARS = [
   "workplace culture and retention in distributed teams",
 ];
 
-const POST_SCHEMA = {
+export const POST_SCHEMA = {
   type: "OBJECT",
   properties: {
     title: { type: "STRING", description: "Specific, plain-English headline, max 70 characters." },
@@ -52,8 +52,11 @@ const POST_SCHEMA = {
     },
     image_alt: { type: "STRING", description: "Concise alt text for the cover image, max 125 characters." },
     fact_check_notes: { type: "STRING", description: "Claims a human should verify before publishing, or 'None'." },
+    meta_title: { type: "STRING", description: "Search result title, max 60 characters, includes the focus keyword." },
+    meta_description: { type: "STRING", description: "Search result description, 120-155 characters, no quotation marks." },
+    focus_keyword: { type: "STRING", description: "The 2-4 word phrase this post should rank for, lowercase." },
   },
-  required: ["title", "excerpt", "body", "tags", "image_prompt", "image_alt", "fact_check_notes"],
+  required: ["title", "excerpt", "body", "tags", "image_prompt", "image_alt", "fact_check_notes", "meta_title", "meta_description", "focus_keyword"],
 };
 
 type Draft = {
@@ -64,12 +67,27 @@ type Draft = {
   image_prompt: string;
   image_alt: string;
   fact_check_notes: string;
+  meta_title?: string;
+  meta_description?: string;
+  focus_keyword?: string;
 };
 
 const IMAGE_STYLE =
   "Wide 16:9 editorial composition, soft natural light, warm honey-amber and cream colour palette with calm neutral tones, " +
   "modern and professional. Absolutely no text, letters, numbers, logos, watermarks or UI screenshots. " +
   "No recognisable real people; if people appear they are small, unidentifiable or seen from behind.";
+
+/** The company brief and recent titles every writing job gets, so no job has to repeat this wiring. */
+export async function writerContext() {
+  const settings = await getBlogSettings();
+  const { data: recent } = await db().from("blog_posts").select("title").order("created_date", { ascending: false }).limit(25);
+  const NL = String.fromCharCode(10);
+  return {
+    settings,
+    brief: settings.company_brief.trim(),
+    avoid: (recent ?? []).map((r: { title: string }) => `- ${r.title}`).join(NL),
+  };
+}
 
 export type AgentResult = { id: string; title: string; status: string; imageOk: boolean; imageError?: string };
 
@@ -100,7 +118,7 @@ async function nextTopic(hiveEvery: number): Promise<Topic | null> {
   return (await oldest(order[0])) ?? (await oldest(order[1]));
 }
 
-async function uniqueSlug(title: string) {
+export async function uniqueSlug(title: string) {
   const base = slugify(title);
   for (let n = 1; n < 50; n += 1) {
     const slug = n === 1 ? base : `${base}-${n}`;
@@ -192,6 +210,9 @@ export async function generateDraft(opts: { topic?: string; facts?: string; defe
       cover_alt: clean(draft.image_alt, 200),
       image_prompt: imagePrompt,
       fact_check_notes: clean(draft.fact_check_notes, 2000, { multiline: true }),
+      meta_title: clean(draft.meta_title, 70),
+      meta_description: clean(draft.meta_description, 170),
+      focus_keyword: clean(draft.focus_keyword, 60).toLowerCase(),
       facts_used: facts,
       status,
       source: "ai",

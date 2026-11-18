@@ -1,6 +1,7 @@
 // Blog types and reading helpers. Published posts are read on the server with the secret key
 // (the tables have no public policies), so drafts can never leak through the public API key.
 import "server-only";
+import type { LinkSuggestion } from "@/lib/blog-sections";
 import { db, isSupabaseConfigured } from "@/lib/supabase";
 
 export const POST_STATUSES = ["draft", "published", "rejected"] as const;
@@ -19,6 +20,10 @@ export type BlogPost = {
   image_prompt: string;
   fact_check_notes: string;
   facts_used: string;
+  meta_title: string;
+  meta_description: string;
+  focus_keyword: string;
+  link_suggestions: LinkSuggestion[];
   status: PostStatus;
   source: "manual" | "ai";
   topic: string;
@@ -49,18 +54,26 @@ export function isSlug(value: string) {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && value.length <= 100;
 }
 
-const PUBLIC_FIELDS = "id, slug, title, excerpt, body, tags, cover_image_url, cover_alt, published_date, updated_date, created_date";
+const LEGACY_FIELDS = "id, slug, title, excerpt, body, tags, cover_image_url, cover_alt, published_date, updated_date, created_date";
+// The SEO columns come from migration 006. Until it has been run, fall back to the original columns so the public blog keeps working.
+const PUBLIC_FIELDS = `${LEGACY_FIELDS}, meta_title, meta_description, focus_keyword`;
+const MISSING_COLUMN = "42703";
+
+type Row = Record<string, unknown>;
+
+/** Runs the published-posts query, retrying without the 006 columns if they don't exist yet. */
+async function queryPublished(run: (fields: string) => PromiseLike<{ data: unknown; error: { code?: string; message: string } | null }>) {
+  let res = await run(PUBLIC_FIELDS);
+  if (res.error && (res.error.code === MISSING_COLUMN || /column/i.test(res.error.message))) res = await run(LEGACY_FIELDS);
+  return res;
+}
 
 /** Published posts, newest first. Returns [] if Supabase isn't configured or the blog tables aren't installed yet. */
 export async function getPublishedPosts(limit = 50): Promise<BlogPost[]> {
   if (!isSupabaseConfigured) return [];
-  const { data, error } = await db()
-    .from("blog_posts")
-    .select(PUBLIC_FIELDS)
-    .eq("status", "published")
-    .lte("published_date", new Date().toISOString())
-    .order("published_date", { ascending: false })
-    .limit(limit);
+  const { data, error } = await queryPublished((fields) =>
+    db().from("blog_posts").select(fields).eq("status", "published").lte("published_date", new Date().toISOString()).order("published_date", { ascending: false }).limit(limit),
+  );
   if (error) {
     console.error("Could not load blog posts:", error.message);
     return [];
@@ -70,18 +83,14 @@ export async function getPublishedPosts(limit = 50): Promise<BlogPost[]> {
 
 export async function getPublishedPost(slug: string): Promise<BlogPost | undefined> {
   if (!isSupabaseConfigured || !isSlug(slug)) return undefined;
-  const { data, error } = await db()
-    .from("blog_posts")
-    .select(PUBLIC_FIELDS)
-    .eq("slug", slug)
-    .eq("status", "published")
-    .lte("published_date", new Date().toISOString())
-    .maybeSingle();
+  const { data, error } = await queryPublished((fields) =>
+    db().from("blog_posts").select(fields).eq("slug", slug).eq("status", "published").lte("published_date", new Date().toISOString()).maybeSingle(),
+  );
   if (error) {
     console.error("Could not load blog post:", error.message);
     return undefined;
   }
-  return (data as unknown as BlogPost) ?? undefined;
+  return (data as Row | null) ? ({ meta_title: "", meta_description: "", focus_keyword: "", ...(data as Row) } as unknown as BlogPost) : undefined;
 }
 
 /** Estimated reading time in whole minutes. */

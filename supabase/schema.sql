@@ -109,3 +109,4 @@ on conflict (id) do nothing;
 -- Blog + AI writing agent: see migrations/004_blog.sql (paste its contents here for new projects).
 
 -- Blog company brief, topic facts and rotation: see migrations/005_blog_facts.sql (paste its contents here for new projects).
+-- Blog studio (brief, strategy, SEO fields, scheduling): see migrations/006_blog_studio.sql (paste its contents here for new projects).

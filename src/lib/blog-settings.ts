@@ -3,7 +3,7 @@ import { db } from "@/lib/supabase";
 
 export type BlogSettings = { company_brief: string; hive_post_every: number };
 
-export const MIGRATION_HINT = "Run supabase/migrations/005_blog_facts.sql in the Supabase SQL editor, then try again.";
+export const MIGRATION_HINT = "Run the latest blog migrations (supabase/migrations/005_blog_facts.sql and 006_blog_studio.sql) in the Supabase SQL editor, then try again.";
 
 /** The one settings row. Throws a clear message if migration 005 hasn't been run. */
 export async function getBlogSettings(): Promise<BlogSettings> {

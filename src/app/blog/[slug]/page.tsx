@@ -28,19 +28,20 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const url = `/blog/${post.slug}`;
   const images = post.cover_image_url ? [{ url: post.cover_image_url, alt: post.cover_alt || post.title }] : undefined;
   return {
-    title: post.title,
-    description: post.excerpt,
+    title: post.meta_title || post.title,
+    description: post.meta_description || post.excerpt,
+    keywords: post.focus_keyword ? [post.focus_keyword, ...post.tags] : undefined,
     alternates: { canonical: url },
     openGraph: {
       ...OG_DEFAULTS,
       type: "article",
       url,
-      title: `${post.title} | Hive BPO`,
-      description: post.excerpt,
+      title: `${post.meta_title || post.title} | Hive BPO`,
+      description: post.meta_description || post.excerpt,
       images,
       publishedTime: post.published_date ?? undefined,
     },
-    twitter: { card: images ? "summary_large_image" : "summary", title: `${post.title} | Hive BPO`, description: post.excerpt, images },
+    twitter: { card: images ? "summary_large_image" : "summary", title: `${post.meta_title || post.title} | Hive BPO`, description: post.meta_description || post.excerpt, images },
   };
 }
 

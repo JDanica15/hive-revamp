@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 function inline(text: string, keyBase: string): ReactNode[] {
   const out: ReactNode[] = [];
-  const re = /\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  const re = /\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/(?!\/)[^\s)]*)\)/g;
   let last = 0;
   let match: RegExpExecArray | null;
   let i = 0;
@@ -14,6 +14,13 @@ function inline(text: string, keyBase: string): ReactNode[] {
     const key = `${keyBase}-${i++}`;
     if (match[1]) out.push(<strong key={key}>{match[1]}</strong>);
     else if (match[2]) out.push(<em key={key}>{match[2]}</em>);
+    else if (match[4].startsWith("/"))
+      // A link to another page of this site: same tab, and no nofollow (it is ours).
+      out.push(
+        <a key={key} href={match[4]} className="text-accent underline underline-offset-2 hover:no-underline">
+          {match[3]}
+        </a>,
+      );
     else
       out.push(
         <a key={key} href={match[4]} target="_blank" rel="noopener noreferrer nofollow" className="text-accent underline underline-offset-2 hover:no-underline">
