@@ -14,26 +14,44 @@ export const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-i
 
 export class GeminiError extends Error {}
 
+// Google answers 429/500/503/504 when it is busy or rate-limiting; these usually clear within seconds,
+// so we retry a few times (waits of ~3s and ~8s) before giving up. Other errors fail straight away.
+const RETRY_STATUSES = new Set([429, 500, 503, 504]);
+const RETRY_WAITS_MS = [3_000, 8_000];
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function call(path: string, init: { method?: string; body?: unknown; timeoutMs?: number } = {}) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new GeminiError("GEMINI_API_KEY is not set.");
-  let res: Response;
-  try {
-    res = await fetch(`${API}/${path}`, {
-      method: init.method ?? (init.body ? "POST" : "GET"),
-      headers: { "x-goog-api-key": key, "content-type": "application/json" },
-      body: init.body ? JSON.stringify(init.body) : undefined,
-      signal: AbortSignal.timeout(init.timeoutMs ?? 90_000),
-      cache: "no-store",
-    });
-  } catch (err) {
-    throw new GeminiError(`Could not reach Gemini: ${err instanceof Error ? err.message : "network error"}`);
-  }
-  if (!res.ok) {
+
+  for (let attempt = 0; ; attempt += 1) {
+    let res: Response;
+    try {
+      res = await fetch(`${API}/${path}`, {
+        method: init.method ?? (init.body ? "POST" : "GET"),
+        headers: { "x-goog-api-key": key, "content-type": "application/json" },
+        body: init.body ? JSON.stringify(init.body) : undefined,
+        signal: AbortSignal.timeout(init.timeoutMs ?? 90_000),
+        cache: "no-store",
+      });
+    } catch (err) {
+      throw new GeminiError(`Could not reach Gemini: ${err instanceof Error ? err.message : "network error"}`);
+    }
+    if (res.ok) return (await res.json()) as GeminiResponse;
+
+    if (RETRY_STATUSES.has(res.status) && attempt < RETRY_WAITS_MS.length) {
+      await res.body?.cancel().catch(() => {});
+      await sleep(RETRY_WAITS_MS[attempt]);
+      continue;
+    }
     const detail = (await res.text().catch(() => "")).slice(0, 400);
+    if (res.status === 503 || res.status === 429) {
+      throw new GeminiError(
+        `Gemini is busy right now (${res.status}); we tried ${attempt + 1} times. This is usually temporary: wait a minute and try again.`,
+      );
+    }
     throw new GeminiError(`Gemini returned ${res.status}. ${detail}`);
   }
-  return (await res.json()) as GeminiResponse;
 }
 
 type Part = { text?: string; inlineData?: { mimeType: string; data: string }; inline_data?: { mime_type: string; data: string } };
