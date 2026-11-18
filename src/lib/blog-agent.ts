@@ -43,7 +43,7 @@ const POST_SCHEMA = {
   properties: {
     title: { type: "STRING", description: "Specific, plain-English headline, max 70 characters." },
     excerpt: { type: "STRING", description: "1-2 sentence summary for the blog list and search results, max 155 characters." },
-    body: { type: "STRING", description: "The full article in simple Markdown, about 800-1,100 words, 4-6 sections." },
+    body: { type: "STRING", description: "The full article in simple Markdown, about 700-900 words, 4-5 sections." },
     tags: { type: "ARRAY", items: { type: "STRING" }, description: "3 to 5 short lowercase topic tags." },
     image_prompt: {
       type: "STRING",
@@ -124,10 +124,14 @@ async function makeCover(prompt: string, slug: string) {
 }
 
 /**
- * Writes one new post (with cover image) and saves it. `topic` / `facts` override the queue:
- * facts make it a Hive post (written only from those facts plus the company brief).
+ * Writes one new post and saves it as a draft. `topic` / `facts` override the queue: facts make it
+ * a Hive post (written only from those facts plus the company brief).
+ *
+ * The cover image is a SEPARATE step (`deferImage`) so a slow model can't use up the time the
+ * server allows for one request: the admin page draws it right after (generateCoverFor), and the
+ * scheduled job draws it in a second run (fillMissingCover). Without deferImage it does both here.
  */
-export async function generateDraft(opts: { topic?: string; facts?: string } = {}): Promise<AgentResult> {
+export async function generateDraft(opts: { topic?: string; facts?: string; deferImage?: boolean } = {}): Promise<AgentResult> {
   const settings = await getBlogSettings();
   const manualTopic = clean(opts.topic, 200);
   const manualFacts = clean(opts.facts, 4000, { multiline: true });
@@ -164,12 +168,14 @@ export async function generateDraft(opts: { topic?: string; facts?: string } = {
   const imagePrompt = clean(draft.image_prompt, 600);
   let cover = { path: "", url: "" };
   let imageError: string | undefined;
-  try {
-    cover = await makeCover(imagePrompt || title, slug);
-  } catch (err) {
-    // Keep the written draft; the admin can retry the image with one click.
-    imageError = err instanceof Error ? err.message : "Image generation failed.";
-    console.error("Blog cover image failed:", imageError);
+  if (!opts.deferImage) {
+    try {
+      cover = await makeCover(imagePrompt || title, slug);
+    } catch (err) {
+      // Keep the written draft; the admin can retry the image with one click.
+      imageError = err instanceof Error ? err.message : "Image generation failed.";
+      console.error("Blog cover image failed:", imageError);
+    }
   }
 
   const status = AUTO_PUBLISH && cover.url ? "published" : "draft";
@@ -220,4 +226,31 @@ export async function regenerateCover(postId: string, promptOverride?: string) {
     throw new Error(error.message);
   }
   if (post.cover_image_path) await db().storage.from(BLOG_BUCKET).remove([post.cover_image_path]);
+}
+
+/**
+ * Scheduled catch-up: finds the oldest AI draft from the last 3 days that has no cover yet, draws
+ * one, and (only if BLOG_AUTO_PUBLISH=true) publishes it. Also retries any image that failed before.
+ */
+export async function fillMissingCover(): Promise<{ done: boolean; id?: string; title?: string; published?: boolean }> {
+  const since = new Date(Date.now() - 3 * 86_400_000).toISOString();
+  const { data } = await db()
+    .from("blog_posts")
+    .select("id, title")
+    .eq("source", "ai")
+    .eq("status", "draft")
+    .eq("cover_image_url", "")
+    .gte("created_date", since)
+    .order("created_date")
+    .limit(1)
+    .maybeSingle();
+  const post = data as { id: string; title: string } | null;
+  if (!post) return { done: true };
+  await regenerateCover(post.id);
+  let published = false;
+  if (AUTO_PUBLISH) {
+    const { error } = await db().from("blog_posts").update({ status: "published", published_date: new Date().toISOString() }).eq("id", post.id);
+    published = !error;
+  }
+  return { done: false, id: post.id, title: post.title, published };
 }

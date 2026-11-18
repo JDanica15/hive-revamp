@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PostEditor } from "@/components/admin/BlogControls";
+import { AutoCover, PostEditor } from "@/components/admin/BlogControls";
 import { ArrowLeft } from "@/components/icons";
 import { requireAdmin } from "@/lib/admin";
 import type { BlogPost } from "@/lib/blog";
@@ -11,9 +11,16 @@ export const metadata: Metadata = { title: "Review post" };
 // Regenerating the cover image runs Gemini inside this page's server action.
 export const maxDuration = 120;
 
-export default async function ReviewPostPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ReviewPostPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ image?: string }>;
+}) {
   await requireAdmin();
   const { id } = await params;
+  const { image } = await searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { data } = await db().from("blog_posts").select("*").eq("id", id).maybeSingle();
   if (!data) notFound();
@@ -32,6 +39,8 @@ export default async function ReviewPostPage({ params }: { params: Promise<{ id:
         </h1>
         {post.source === "ai" && <p className="text-xs text-muted-foreground mt-1">Written by the AI agent ({post.model}). Please read it through before publishing.</p>}
       </div>
+
+      {image === "pending" && !post.cover_image_url && <AutoCover postId={post.id} />}
 
       {hasNotes && (
         <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-sm p-4 text-sm">

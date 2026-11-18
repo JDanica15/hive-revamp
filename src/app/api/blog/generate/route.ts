@@ -1,39 +1,30 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { generateDraft } from "@/lib/blog-agent";
+import { cronDenied } from "@/lib/cron-auth";
 import { GEMINI_CONFIGURED } from "@/lib/gemini";
 import { withinRateLimit } from "@/lib/request-guard";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
-// Writing a post and drawing its cover takes a while.
 export const maxDuration = 120;
 
-const sha = (value: string) => createHash("sha256").update(value).digest();
-
 /**
- * Scheduled trigger (see vercel.json). Vercel Cron calls this with `Authorization: Bearer <CRON_SECRET>`.
- * Without the secret (or with the wrong one) nothing runs, and the agent never publishes on its own
- * unless BLOG_AUTO_PUBLISH=true.
+ * Scheduled step 1 (see vercel.json): writes the article and saves it as a draft. The cover image
+ * is drawn by step 2 (/api/blog/images) a few minutes later, so neither run can time out the other.
+ * Nothing is published unless BLOG_AUTO_PUBLISH=true (and then only once the cover exists).
  */
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return NextResponse.json({ error: "Blog cron is disabled: CRON_SECRET is not set." }, { status: 503 });
-  const given = request.headers.get("authorization") ?? "";
-  if (!timingSafeEqual(sha(given), sha(`Bearer ${secret}`))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const denied = cronDenied(request);
+  if (denied) return denied;
   if (!isSupabaseConfigured || !GEMINI_CONFIGURED) {
     return NextResponse.json({ error: "Supabase or GEMINI_API_KEY is not configured." }, { status: 503 });
   }
   if (!(await withinRateLimit("blogGenerate", "site"))) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
 
   try {
-    const result = await generateDraft();
+    const result = await generateDraft({ deferImage: true });
     revalidatePath("/admin", "layout");
-    if (result.status === "published") {
-      revalidatePath("/blog");
-      revalidatePath("/sitemap.xml");
-    }
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     console.error("Scheduled blog post failed:", err);

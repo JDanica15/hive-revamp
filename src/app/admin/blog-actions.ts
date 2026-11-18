@@ -24,21 +24,40 @@ function refreshBlog(slug?: string) {
 
 const message = (err: unknown) => (err instanceof Error ? err.message : "Something went wrong.");
 
-/** "Write a post now": runs the agent immediately. Saved as a draft for review. */
+/** "Write a post now": writes the article and saves it as a draft; the cover image follows on the review page. */
 export async function generatePostNow(_prev: State, form: FormData): Promise<State> {
   await requireAdmin();
   if (!GEMINI_CONFIGURED) return { error: "GEMINI_API_KEY isn't set. Add it to your environment variables and restart." };
   if (!(await withinRateLimit("blogGenerate", "site"))) return { error: TOO_MANY };
   let id: string;
   try {
-    const result = await generateDraft({ topic: String(form.get("topic") ?? ""), facts: String(form.get("facts") ?? "") });
+    const result = await generateDraft({ topic: String(form.get("topic") ?? ""), facts: String(form.get("facts") ?? ""), deferImage: true });
     id = result.id;
   } catch (err) {
     console.error("Blog generation failed:", err);
     return { error: message(err) };
   }
   refreshBlog();
-  redirect(`/admin/blog/${id}`);
+  // The review page draws the cover image next, as its own request with its own time allowance.
+  redirect(`/admin/blog/${id}?image=pending`);
+}
+
+/** Draws the cover for a post that has none. Safe to call twice: it does nothing once a cover exists. */
+export async function generateCoverFor(id: string): Promise<State> {
+  await requireAdmin();
+  if (!GEMINI_CONFIGURED) return { error: "GEMINI_API_KEY isn't set." };
+  const { data } = await db().from("blog_posts").select("slug, cover_image_url").eq("id", id).maybeSingle();
+  if (!data) return { error: "Post not found." };
+  if (data.cover_image_url) return { info: "The cover image is already there." };
+  if (!(await withinRateLimit("blogGenerate", "site"))) return { error: TOO_MANY };
+  try {
+    await regenerateCover(id);
+  } catch (err) {
+    console.error("Cover generation failed:", err);
+    return { error: message(err) };
+  }
+  refreshBlog(data.slug);
+  return { info: "Cover image added." };
 }
 
 export async function checkGeminiConnection(): Promise<State> {

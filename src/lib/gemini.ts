@@ -35,6 +35,11 @@ async function call(path: string, init: { method?: string; body?: unknown; timeo
         cache: "no-store",
       });
     } catch (err) {
+      if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
+        throw new GeminiError(
+          `Gemini didn't answer within ${Math.round((init.timeoutMs ?? 90_000) / 1000)} seconds. It is probably busy: wait a minute and try again.`,
+        );
+      }
       throw new GeminiError(`Could not reach Gemini: ${err instanceof Error ? err.message : "network error"}`);
     }
     if (res.ok) return (await res.json()) as GeminiResponse;
@@ -73,6 +78,7 @@ export async function generateJson<T>(opts: { system: string; prompt: string; sc
         temperature: opts.temperature ?? 0.8,
       },
     },
+    timeoutMs: 100_000, // the article is its own step now, so it can use most of the 120s the route allows
   });
   if (data.promptFeedback?.blockReason) throw new GeminiError(`Gemini blocked the request (${data.promptFeedback.blockReason}).`);
   const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
@@ -87,7 +93,7 @@ export async function generateJson<T>(opts: { system: string; prompt: string; sc
 /** Generates one image. Returns the raw bytes and MIME type. */
 export async function generateImage(prompt: string): Promise<{ bytes: Buffer; mimeType: string }> {
   const data = await call(`models/${IMAGE_MODEL}:generateContent`, {
-    timeoutMs: 120_000,
+    timeoutMs: 100_000,
     body: {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { responseModalities: ["TEXT", "IMAGE"] },

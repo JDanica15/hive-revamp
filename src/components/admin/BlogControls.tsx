@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import {
   addTopic,
   checkGeminiConnection,
   deletePost,
+  generateCoverFor,
   generatePostNow,
   regeneratePostImage,
   removeTopic,
@@ -76,11 +78,11 @@ export function GeneratePostForm() {
         <p className="text-xs text-muted-foreground mt-2">Needs a topic above. Leave empty for a general post.</p>
       </div>
       <div className="flex items-center gap-4 flex-wrap">
-        <Pending idle="Write a post now" busy="Writing and drawing… this takes about a minute" />
+        <Pending idle="Write a post now" busy="Writing the article… up to a minute" />
         <Notice state={state} />
       </div>
       <p className="text-xs text-muted-foreground">
-        The agent writes the article, creates a cover image and saves it as a draft. Nothing goes live until you publish it.
+        The agent writes the article and saves it as a draft, then draws the cover image on the next screen. Nothing goes live until you publish it.
       </p>
     </form>
   );
@@ -339,5 +341,56 @@ export function BlogSettingsForm({ brief, every }: { brief: string; every: numbe
         <Notice state={state} />
       </div>
     </form>
+  );
+}
+
+/**
+ * Shown on the review page right after a post is written: draws the cover image as its own
+ * request, then reloads the page to show it. If it fails, the article is safe and you can retry.
+ */
+export function AutoCover({ postId }: { postId: string }) {
+  const router = useRouter();
+  const started = useRef(false);
+  const [running, setRunning] = useState(true);
+  const [error, setError] = useState("");
+
+  const run = () => {
+    setRunning(true);
+    setError("");
+    generateCoverFor(postId)
+      .then((result) => {
+        if (result?.error) setError(result.error);
+        else router.replace(`/admin/blog/${postId}`);
+        router.refresh();
+      })
+      .catch(() => setError("The request was interrupted. Click “Try again”, or use “Generate image” below."))
+      .finally(() => setRunning(false));
+  };
+
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when the page opens
+  }, []);
+
+  return (
+    <div role="status" className="bg-accent/10 border border-accent/30 rounded-sm p-4 text-sm flex items-center gap-3 flex-wrap">
+      {running ? (
+        <>
+          <LoaderCircle className="w-4 h-4 animate-spin shrink-0" />
+          <span>Drawing the cover image… this can take up to a minute. You can start reading the article below.</span>
+        </>
+      ) : (
+        <>
+          <span className="text-destructive whitespace-pre-line">{error || "Done."}</span>
+          {error && (
+            <button type="button" onClick={run} className={BUTTON}>
+              Try again
+            </button>
+          )}
+        </>
+      )}
+    </div>
   );
 }
