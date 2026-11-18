@@ -27,20 +27,56 @@ export const BUTTON =
 export const PRIMARY =
   "inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-foreground text-background text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors";
 
-export function Notice({
-  state,
-}: {
-  state: { error?: string; info?: string } | null;
-}) {
+type NoticeState = { error?: string; info?: string } | null;
+
+// Success messages fade out after 3 seconds; errors stay longer (8 seconds, or until dismissed) because
+// they usually need to be read and acted on.
+const SUCCESS_MS = 3000;
+const ERROR_MS = 8000;
+const FADE_MS = 400;
+
+function Toast({ state }: { state: NoticeState }) {
+  const [phase, setPhase] = useState<"in" | "out" | "gone">("gone");
+  useEffect(() => {
+    if (!state) return;
+    setPhase("in");
+    const ms = state.error ? ERROR_MS : SUCCESS_MS;
+    const fade = setTimeout(() => setPhase("out"), ms);
+    const done = setTimeout(() => setPhase("gone"), ms + FADE_MS);
+    return () => {
+      clearTimeout(fade);
+      clearTimeout(done);
+    };
+  }, [state]);
+  if (!state || phase === "gone") return null;
+  const isError = Boolean(state.error);
+  return (
+    <div
+      role={isError ? "alert" : "status"}
+      data-testid="toast"
+      className={
+        "fixed top-5 right-5 z-50 max-w-sm flex items-start gap-3 rounded-sm border px-4 py-3 text-sm shadow-lg whitespace-pre-line transition-opacity ease-out " +
+        (phase === "out" ? "opacity-0 " : "opacity-100 ") +
+        (isError ? "bg-red-50 border-red-200 text-red-900" : "bg-emerald-50 border-emerald-200 text-emerald-900")
+      }
+      style={{ transitionDuration: `${FADE_MS}ms` }}
+    >
+      <span className="min-w-0">{state.error ?? state.info}</span>
+      {isError && (
+        <button type="button" onClick={() => setPhase("gone")} aria-label="Dismiss message" className="shrink-0 -my-1 px-1 text-lg leading-none opacity-70 hover:opacity-100">
+          ×
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Action feedback. A toast by default; `inline` keeps long results (like the connection check) on the page. */
+export function Notice({ state, inline = false }: { state: NoticeState; inline?: boolean }) {
+  if (!inline) return <Toast state={state} />;
   if (!state) return null;
   return (
-    <p
-      role={state.error ? "alert" : "status"}
-      className={
-        "text-sm whitespace-pre-line " +
-        (state.error ? "text-destructive" : "text-emerald-700")
-      }
-    >
+    <p role={state.error ? "alert" : "status"} className={"text-sm whitespace-pre-line " + (state.error ? "text-destructive" : "text-emerald-700")}>
       {state.error ?? state.info}
     </p>
   );
@@ -64,7 +100,7 @@ export function GeminiCheck() {
   return (
     <form action={action} className="flex items-start gap-3 flex-wrap">
       <CheckButton />
-      <Notice state={state} />
+      <Notice state={state} inline />
     </form>
   );
 }
