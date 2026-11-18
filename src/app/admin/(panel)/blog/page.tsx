@@ -87,7 +87,7 @@ export default async function BlogAdminPage({ searchParams }: { searchParams: Pr
       )}
 
       <div>
-        <nav aria-label="Filter posts" className="flex gap-1 border-b border-border mb-4 overflow-x-auto">
+        <nav aria-label="Filter posts" className="flex flex-wrap gap-1 border-b border-border mb-4">
           {TABS.map((t) => {
             const count = all.filter(matches[t.id]).length;
             return (
